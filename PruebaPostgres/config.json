@@ -1,0 +1,7 @@
+{
+    "host": "192.168.56.101",
+    "puerto": 5432,
+    "base": "Facturacion",
+    "usuario": "vmdebian",
+    "contraseña": ""
+}

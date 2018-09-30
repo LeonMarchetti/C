@@ -1,0 +1,5 @@
+{
+    "sql": "Select * \
+            From public.\"Factura\", public.\"Cliente\" \
+            Where \"Factura\".\"Id\" = \"Cliente\".\"Id\";"
+}

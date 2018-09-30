@@ -1,0 +1,4 @@
+{
+    "basededatos": "facturacion",
+    "sql": "Select * From Cliente"
+}
