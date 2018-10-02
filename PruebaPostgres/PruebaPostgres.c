@@ -103,11 +103,7 @@ void importar_consulta()
 const char* json_get_string(json_object* objeto, char* clave)
 {
     json_object* objeto_hijo;
-    json_bool bool_resultado = json_object_object_get_ex(objeto, clave, &objeto_hijo);
-    if (!bool_resultado || !objeto_hijo)
-    {
-        return NULL;
-    }
+    json_object_object_get_ex(objeto, clave, &objeto_hijo);
     return json_object_get_string(objeto_hijo);
 }
 
