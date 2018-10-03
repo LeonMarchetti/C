@@ -6,13 +6,8 @@ struct datos_t {
     int socket;
 };
 
-// Constantes =========================================================
-// Ubicación del servidor:
-extern const char* IP;
-extern const int PUERTO;
-
 // Funciones ==========================================================
-void *atender(void*);
-void servidor(char*, int);
+void* atender(void*);
+void servidor(const char*, int);
 
 #endif /* SERVIDOR_H_ */
