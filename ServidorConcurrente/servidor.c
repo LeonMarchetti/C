@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -12,14 +13,16 @@ const char* IP = "127.0.0.1";
 const int PUERTO = 8080;
 const int TAM_BUFFER_S = 30;
 
+const char* CERRAR = "\n";
+
 // Funciones ==========================================================
 void *atender(void *arg)
 {
     // Para que el hilo termine cuando termine la función:
     pthread_detach(pthread_self());
 
-    char buf[TAM_BUFFER_S];
-    char resp[TAM_BUFFER_S];
+    char buf_in[TAM_BUFFER_S];
+    char buf_out[TAM_BUFFER_S];
     int nb;
 
     // Recibo los datos pasados al hilo por el puntero:
@@ -27,16 +30,26 @@ void *atender(void *arg)
 
     printf("[Hilo][%d] Atendiendo socket\n", datos->socket);
 
-    // Recibir datos:
-    nb = read(datos->socket, buf, TAM_BUFFER_S);
-    buf[nb] = '\0';
+    while (1)
+    {
+        // Recibir datos:
+        nb = read(datos->socket, buf_in, TAM_BUFFER_S);
+        buf_in[nb] = '\0';
 
-    // Mostrar en pantalla:
-    printf("[Hilo][%d] %s", datos->socket, buf);
+        // Presionar solo enter para terminar la sesión
+        if (!strcmp(buf_in, CERRAR))
+        {
+            break;
+        }
+        buf_in[nb-1] = '\0'; // Saco el salto de línea
+        sprintf(buf_out, "Recibido \"%s\"", buf_in);
 
-    // Enviar datos:
-    sprintf(resp, "Recibido\n");
-    write(datos->socket, resp, TAM_BUFFER_S);
+        // Mostrar en pantalla:
+        printf("[Hilo][%d] %s\n", datos->socket, buf_out);
+
+        // Enviar datos:
+        write(datos->socket, buf_out, TAM_BUFFER_S);
+    }
 
     // Cerrar socket:
     close(datos->socket);

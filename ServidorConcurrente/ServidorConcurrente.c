@@ -28,6 +28,7 @@ int main(int argc, char **argv)
     if (argv[1][0] == ARG_CLIENTE)
     {
         cliente();
+        printf(">>> ");
         getchar();
         return 0;
     }

@@ -36,21 +36,31 @@ void cliente()
     }
 
     int nb;
-    char buf[TAM_BUFFER_C];
+    char buf_in[TAM_BUFFER_C];
+    char buf_out[TAM_BUFFER_C];
 
-    // Entrada por consola:
-    printf("> Ingrese texto: ");
-    fgets(buf, TAM_BUFFER_C, stdin);
+    while (1)
+    {
+        // Entrada por consola:
+        printf("> Ingrese texto: ");
+        fgets(buf_out, TAM_BUFFER_C, stdin);
 
-    // Mandar al servidor:
-    write(idsockc, buf, strlen(buf));
-    sleep(1);
+        // Mandar al servidor:
+        write(idsockc, buf_out, strlen(buf_out));
+        //~ sleep(1);
 
-    // Recibir del servidor:
-    nb = read(idsockc, buf, TAM_BUFFER_C);
-    buf[nb] = '\0';
+        // Recibir del servidor:
+        nb = read(idsockc, buf_in, TAM_BUFFER_C);
+        buf_in[nb-1] = '\0';
 
-    // Mostrar en pantalla:
-    printf("[%d] > %s\n", idsockc, buf);
+        // Presionar solo enter para terminar la sesión
+        if (!strcmp(buf_out, CERRAR))
+        {
+            break;
+        }
+
+        // Mostrar en pantalla:
+        printf("[%d] > %s\n", idsockc, buf_in);
+    }
     close(idsockc);
 }
