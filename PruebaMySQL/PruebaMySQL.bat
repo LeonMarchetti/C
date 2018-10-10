@@ -1,3 +1,5 @@
+@echo off
+
 gcc -Wall -o "./run/PruebaMySQL" ^
     "PruebaMySQL.c" ^
     -I "/usr/include/mysql" ^

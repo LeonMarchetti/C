@@ -28,8 +28,15 @@ int main(int argc, char **argv)
 {
     importar_config();
     MYSQL* conexion = conectar();
-    consultar(conexion, "Select * From Factura");
-    mysql_close(conexion);
+    if (conexion)
+    {
+        consultar(conexion, "Select * From Factura");
+        mysql_close(conexion);
+    }
+    else
+    {
+        printf("No se pudo establecer la conexión...\n");
+    }
 }
 
 MYSQL* conectar()
