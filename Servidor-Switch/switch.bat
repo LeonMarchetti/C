@@ -1,3 +1,5 @@
+@echo off
+
 gcc -Wall -o "./run/Servidor-Switch" ^
     "Servidor-Switch.c" ^
     ./object/*.o ^
