@@ -1,10 +1,3 @@
-/* Compilación: =======================================================
-gcc -Wall -o "./run/PruebaJSON" ^
-    "PruebaJSON.c" ^
-    -I "/usr/include/json-c" ^
-    -L /usr/lib ^
-    -l json-c
- */
 // Librerías ==========================================================
 #include <json.h>
 #include <stdio.h>
@@ -18,6 +11,7 @@ void prueba_nuevo_objeto();
 json_object* importar_de_archivo();
 json_object* importar_de_string();
 
+
 int main(int argc, char **argv)
 {
     prueba_importar_objeto();
@@ -27,8 +21,8 @@ int main(int argc, char **argv)
 void prueba_importar_objeto()
 {
 
-    //~ json_object* objeto_json = importar_de_archivo();
-    json_object* objeto_json = importar_de_string();
+    json_object* objeto_json = importar_de_archivo();
+    //~ json_object* objeto_json = importar_de_string();
 
     // Validar objeto json:
     if (!objeto_json)
@@ -41,6 +35,7 @@ void prueba_importar_objeto()
     printf("Longitud: %d\n", json_object_object_length(objeto_json));
 
     // Listar objetos hijos:
+    /*
     json_object_object_foreach(objeto_json, clave, valor)
     {
         // valor es json_object*
@@ -57,9 +52,27 @@ void prueba_importar_objeto()
             case json_type_double:
                 printf("valor: %.2f\n", json_object_get_double(valor));
                 break;
+            case json_type_array:
+                printf("valor:\n[\n");
+                int n = json_object_array_length(valor);
+                for (int i = 0; i < n; i++)
+                {
+                    json_object* e = json_object_array_get_idx(valor, i);
+                    const char* valor_e = json_object_get_string(e);
+                    printf("\t%s,\n", valor_e);
+                }
+                printf("]\n");
+                break;
             default:
                 printf("tipo desconocido\n");
         }
+    }
+    */
+
+    json_object_object_foreach(objeto_json, clave, valor)
+    {
+        const char* valor_str = json_object_get_string(valor);
+        printf("clave: %s\t%s\n", clave, valor_str);
     }
 
     printf("\n");

@@ -1,3 +1,5 @@
+@echo off
+
 gcc -Wall -o "./run/PruebaJSON" ^
     "PruebaJSON.c" ^
     -I "/usr/include/json-c" ^

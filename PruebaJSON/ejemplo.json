@@ -1,4 +1,8 @@
 {
     "basededatos": "facturacion",
-    "sql": "Select * From Cliente"
+    "sql": "Select * From Cliente",
+    "Lista": ["Uno", "Dos", "Tres"],
+    "float": 17.05,
+    "entero": 1993,
+    "objeto": { "uno": 1, "dos": 2}
 }
