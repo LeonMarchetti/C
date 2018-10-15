@@ -1,0 +1,24 @@
+CC=gcc
+CFLAGS=-Wall
+
+OBJ_DIR=./object/
+RUN_DIR=./run/
+
+PRJ_NOM=SinTitulo
+SOURCE=${PRJ_NOM}.c
+TARGET=${RUN_DIR}${PRJ_NOM}.exe
+
+HEADER=header
+HEADER_SOURCE=${HEADER}.c
+HEADER_OBJECT=${OBJ_DIR}${HEADER}.o
+
+all: ${TARGET}
+
+${HEADER_OBJECT}: ${HEADER_SOURCE}
+	${CC} ${CFLAGS} -c ${HEADER_SOURCE} -o ${HEADER_OBJECT}
+
+${TARGET}: ${SOURCE} ${HEADER_OBJECT}
+	${CC} ${CFLAGS} -o ${TARGET} ${SOURCE} ${HEADER_OBJECT}
+
+clean:
+	${RM} ./object/*.o ./run/*.exe
