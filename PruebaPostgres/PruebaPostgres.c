@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "json-util.h"
+
 // Constantes =========================================================
 #define ARCHIVO "config.json"
 #define KEY_HOST "host"
@@ -25,7 +27,6 @@ const char* consulta;
 // Funciones ==========================================================
 void importar_config();
 void importar_consulta();
-const char* json_get_string(json_object*, char*);
 PGconn* conectar();
 void consultar(PGconn*, const char*);
 
@@ -98,13 +99,7 @@ void importar_consulta()
         printf("No se pudo leer la consulta (Clave: %s)...\n", KEY_CONSULTA);
         exit(1);
     }
-}
-
-const char* json_get_string(json_object* objeto, char* clave)
-{
-    json_object* objeto_hijo;
-    json_object_object_get_ex(objeto, clave, &objeto_hijo);
-    return json_object_get_string(objeto_hijo);
+    printf("Consulta importada: \n\"%s\"\n\n", consulta);
 }
 
 PGconn* conectar()

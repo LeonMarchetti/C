@@ -4,6 +4,7 @@
 #include <json.h>
 #include <mysql.h>
 #include <stdio.h>
+#include <string.h>
 
 // Constantes =================================================================
 const char* JSON_KEY_CANTIDAD = "cantidad";

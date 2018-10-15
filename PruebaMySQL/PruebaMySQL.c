@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "json-util.h"
+
 // Constantes =========================================================
 #define ARCHIVO "config.json"
 #define KEY_HOST "host"
@@ -25,8 +27,6 @@ MYSQL* conectar();
 void consultar(MYSQL*, const char*);
 void importar_config();
 void listar_tablas(MYSQL*);
-const char* json_get_string(json_object*, char*);
-void print_json(json_object*);
 
 void prueba_lista_tablas(MYSQL*);
 void prueba_consulta(MYSQL*);
@@ -142,13 +142,6 @@ void importar_config()
         printf("No se pudo leer la contraseña (Clave: %s)...\n", KEY_PASS);
         exit(1);
     }
-}
-
-const char* json_get_string(json_object* objeto, char* clave)
-{
-    json_object* objeto_hijo;
-    json_object_object_get_ex(objeto, clave, &objeto_hijo);
-    return json_object_get_string(objeto_hijo);
 }
 
 void prueba_lista_tablas(MYSQL* conexion)
@@ -299,12 +292,4 @@ json_object* mysql_consulta(void* conexion, const char* consulta)
     json_object_object_add(objeto, "cantidad", objeto_cant_tablas);
     json_object_object_add(objeto, "filas", arreglo);
     return objeto;
-}
-
-void print_json(json_object* objeto)
-{
-    printf("========================================\n");
-    printf("String JSON:\n");
-    printf("%s\n", json_object_to_json_string_ext(objeto, 0));
-    printf("========================================\n");
 }

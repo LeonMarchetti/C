@@ -1,5 +1,3 @@
 {
-    "sql": "Select * \
-            From public.\"Factura\", public.\"Cliente\" \
-            Where \"Factura\".\"Id\" = \"Cliente\".\"Id\";"
+    "sql": "Select * \n\tFrom public.\"Factura\", public.\"Cliente\" \n\tWhere \"Factura\".\"Id\" = \"Cliente\".\"Id\";"
 }
