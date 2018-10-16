@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -pthread
 
 INCLUDES=-I /usr/include/json-c -I /usr/include/mysql
 LFLAGS=-L /usr/lib

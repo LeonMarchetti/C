@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Constantes =========================================================
-
 // Funciones ==========================================================
 void* hilo_terminar(void* arg)
 {

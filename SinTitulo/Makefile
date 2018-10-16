@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -pthread
 
 OBJ_DIR=./object/
 RUN_DIR=./run/

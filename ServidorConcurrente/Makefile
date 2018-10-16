@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -pthread
 
 INCLUDES=-I /usr/include/json-c
 LFLAGS=-L /usr/lib
