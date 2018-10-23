@@ -1,5 +1,5 @@
-#ifndef HEADER_H_
-#define HEADER_H_
+#ifndef MYSQL_H_
+#define MYSQL_H_
 
 // Librerías ==========================================================
 #include <json.h>
@@ -7,8 +7,6 @@
 // Tipos ==============================================================
 
 // Constantes =========================================================
-extern const char* JSON_KEY_CANTIDAD;
-extern const char* JSON_KEY_FILAS;
 
 // Funciones ==========================================================
 /** Realiza una conexión a una base de datos MySQL.
@@ -46,4 +44,4 @@ json_object* mysql_consulta(void* conexion, const char* consulta);
  */
 json_object* mysql_tablas(void* conexion);
 
-#endif /* HEADER_H_ */
+#endif /* MYSQL_H_ */
