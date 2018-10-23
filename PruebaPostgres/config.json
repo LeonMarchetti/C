@@ -1,7 +1,7 @@
 {
-    "host": "192.168.1.39",
+    "host": "192.168.1.36",
     "puerto": 5432,
     "base": "Facturacion",
-    "usuario": "vmdebian",
+    "usuario": "postgres",
     "contraseña": ""
 }
