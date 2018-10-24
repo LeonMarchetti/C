@@ -33,6 +33,7 @@ void prueba_consulta(PGconn*);
 
 json_object* postgres_consulta(void* conexion, const char* consulta);
 json_object* postgres_tablas(void* conexion);
+json_object* postgres_res_a_json(PGresult* resultado);
 
 int main(int argc, char **argv)
 {
@@ -122,8 +123,8 @@ PGconn* conectar()
 
 void prueba_consulta(PGconn* conexion)
 {
-    json_object* resultado = postgres_consulta(conexion, consulta);
-    //~ json_object* resultado = postgres_tablas(conexion);
+    //~ json_object* resultado = postgres_consulta(conexion, consulta);
+    json_object* resultado = postgres_tablas(conexion);
     if (!resultado)
     {
         return;
@@ -141,18 +142,30 @@ void prueba_consulta(PGconn* conexion)
     json_object* filas;
     json_object_object_get_ex(resultado, "filas", &filas);
 
-    printf("\nprueba_consulta:\n");
-    for (int i = 0; i < cantidad; i++)
+    // Columnas:
+    json_object* arreglo_columnas;
+    json_object_object_get_ex(resultado, "columnas", &arreglo_columnas);
+    int i = 0;
+    json_object* obj_columna;
+    printf("Fila\t");
+    while ((obj_columna = json_object_array_get_idx(arreglo_columnas, i++)))
     {
-        json_object* arreglo_fila = json_object_array_get_idx(filas, i);
+        printf("|%s\t", json_object_get_string(obj_columna));
+    }
+    printf("\n");
+    printf("----------------------------------------\n");
 
-        // Iterar arreglo fila:
-        int len = json_object_array_length(arreglo_fila);
-        for (int j = 0; j < len; j++)
+    // Iterar filas:
+    int          f = 0;
+    json_object* arreglo_fila;
+    while((arreglo_fila = json_object_array_get_idx(filas, f++)))
+    {
+        printf("%d\t", f);
+        int          c = 0;
+        json_object* obj_celda;
+        while ((obj_celda = json_object_array_get_idx(arreglo_fila, c++)))
         {
-            json_object* objeto_celda = json_object_array_get_idx(arreglo_fila, j);
-            const char* contenido = json_object_get_string(objeto_celda);
-            printf("%s\t", contenido);
+            printf("|%s\t", json_object_get_string(obj_celda));
         }
         printf("\n");
     }
@@ -170,39 +183,7 @@ json_object* postgres_consulta(void* conexion, const char* consulta)
         fprintf(stderr, "%s\n", PQerrorMessage((PGconn* ) conexion));
         return NULL;
     }
-
-    int cant_columnas = PQnfields(resultado);
-    json_object* arreglo_columnas = json_object_new_array();
-    for (int c = 0; c < cant_columnas; c++)
-    {
-        json_object_array_add(arreglo_columnas,
-                              json_object_new_string(PQfname(resultado, c)));
-    }
-
-    // Arreglo JSON con cada fila del resultado:
-    json_object* arreglo = json_object_new_array(); // Arreglo con las filas.
-    int cant_filas = PQntuples(resultado);
-    for (int f = 0; f < cant_filas; f++)
-    {
-        // Arreglo JSON con cada valor de la fila:
-        json_object* arreglo_fila = json_object_new_array();
-        for (int c = 0; c < cant_columnas; c++)
-        {
-            const char* valor = PQgetvalue(resultado, f, c);
-            json_object* objeto_celda = json_object_new_string(valor);
-            json_object_array_add(arreglo_fila, objeto_celda);
-        }
-        json_object_array_add(arreglo, arreglo_fila);
-    }
-    PQclear(resultado);
-
-    // Regresar resultado como objeto JSON:
-    json_object* objeto = json_object_new_object();
-    json_object* objeto_cant_filas = json_object_new_int(cant_filas);
-    json_object_object_add(objeto, "cantidad", objeto_cant_filas);
-    json_object_object_add(objeto, "columnas", arreglo_columnas);
-    json_object_object_add(objeto, "filas", arreglo);
-    return objeto;
+    return postgres_res_a_json(resultado);
 }
 
 json_object* postgres_tablas(void* conexion)
@@ -217,25 +198,71 @@ json_object* postgres_tablas(void* conexion)
         return NULL;
     }
 
+    //~ return postgres_res_a_json(resultado);
+
     // Arreglo de columnas (solo una):
     json_object* arreglo_columnas = json_object_new_array();
-    json_object_array_add(arreglo_columnas, json_object_new_string("tabla"));
+    json_object_array_add(arreglo_columnas, json_object_new_string("tablename"));
 
     // Arreglo con cada fila del resultado:
-    json_object* arreglo = json_object_new_array(); // Arreglo con las filas.
-    int cant_filas = PQntuples(resultado);
+    json_object* arreglo    = json_object_new_array(); // Arreglo con las filas.
+    int          cant_filas = PQntuples(resultado);
     for (int f = 0; f < cant_filas; f++)
     {
         // Arreglo JSON con cada valor de la fila:
         json_object* arreglo_fila = json_object_new_array();
 
-        // Armar nombre de la tabla:
         char nombre_tabla[64];
+        // Armar nombre de la tabla:
         sprintf(nombre_tabla, "%s.\"%s\"",
                 PQgetvalue(resultado, f, 0),
                 PQgetvalue(resultado, f, 1));
 
-        json_object_array_add(arreglo_fila, json_object_new_string(nombre_tabla));
+        json_object_array_add(
+            arreglo_fila,
+            json_object_new_string(nombre_tabla)
+        );
+        json_object_array_add(arreglo, arreglo_fila);
+    }
+    PQclear(resultado);
+
+    // Regresar resultado como objeto JSON:
+    json_object* objeto            = json_object_new_object();
+    json_object* objeto_cant_filas = json_object_new_int(cant_filas);
+
+    json_object_object_add(objeto, "cantidad", objeto_cant_filas);
+    json_object_object_add(objeto, "columnas", arreglo_columnas);
+    json_object_object_add(objeto, "filas", arreglo);
+    return objeto;
+}
+
+json_object* postgres_res_a_json(PGresult* resultado)
+{
+    // Longitud de string para cada fila:
+    int          cant_columnas    = PQnfields(resultado);
+    json_object* arreglo_columnas = json_object_new_array();
+    for (int c = 0; c < cant_columnas; c++)
+    {
+        json_object_array_add(arreglo_columnas,
+                              json_object_new_string(PQfname(resultado, c)));
+    }
+
+    // Arreglo con cada fila del resultado:
+    json_object* arreglo    = json_object_new_array(); // Arreglo con las filas.
+    int          cant_filas = PQntuples(resultado);
+    for (int f = 0; f < cant_filas; f++)
+    {
+        // Arreglo con cada valor de la fila:
+        json_object* arreglo_fila = json_object_new_array();
+        for (int c = 0; c < cant_columnas; c++)
+        {
+            json_object_array_add(
+                arreglo_fila,
+                json_object_new_string(
+                    PQgetvalue(resultado, f, c)
+                )
+            );
+        }
         json_object_array_add(arreglo, arreglo_fila);
     }
     PQclear(resultado);

@@ -9,6 +9,9 @@
 // Constantes =================================================================
 
 // Funciones ==================================================================
+json_object* mysql_res_a_json(MYSQL_RES* resultado);
+
+
 void* mysql_conectar(const char* host, int puerto, const char* usuario,
                      const char* contrasenia, const char* nombre_bd)
 {
@@ -43,49 +46,7 @@ json_object* mysql_consulta(void* conexion, const char* consulta)
         return NULL;
     }
 
-    // Longitud de string para cada fila:
-    int          cant_columnas    = mysql_num_fields(resultado);
-    int          tam_fila         = 0;
-    json_object* arreglo_columnas = json_object_new_array();
-    MYSQL_FIELD* columna;
-    while ((columna = mysql_fetch_field(resultado)))
-    {
-        json_object* objeto_columna = json_object_new_string(columna->name);
-        json_object_array_add(arreglo_columnas, objeto_columna);
-
-        tam_fila += columna->length + 1;
-    }
-
-    // Arreglo JSON con cada fila del resultado:
-    json_object* arreglo = json_object_new_array(); // Arreglo con las tablas.
-    MYSQL_ROW    fila;
-    int i = 0;
-    while ((fila = mysql_fetch_row(resultado)))
-    {
-        char* fila_str = malloc(tam_fila);
-        fila_str[0] = 0;
-        for (int i = 0; i < cant_columnas; i++)
-        {
-            strcat(fila_str, fila[i]);
-            strcat(fila_str, "\t\0");
-        }
-        fila_str[tam_fila] = 0;
-
-        json_object* objeto_nombre_tabla = json_object_new_string(fila_str);
-        json_object_array_add(arreglo, objeto_nombre_tabla);
-        i++;
-    }
-
-    mysql_free_result(resultado); // Liberar resultado.
-
-    // Regresar resultado como objeto JSON:
-    json_object* objeto            = json_object_new_object();
-    json_object* objeto_cant_filas = json_object_new_int(i);
-
-    json_object_object_add(objeto, "cantidad", objeto_cant_filas);
-    json_object_object_add(objeto, "columnas", arreglo_columnas);
-    json_object_object_add(objeto, "filas", arreglo);
-    return objeto;
+    return mysql_res_a_json(resultado);
 }
 
 json_object* mysql_tablas(void* conexion)
@@ -97,28 +58,51 @@ json_object* mysql_tablas(void* conexion)
         return NULL;
     }
 
-    // Arreglo de columnas (solo una):
-    json_object* arreglo_columnas = json_object_new_array();
-    json_object_array_add(arreglo_columnas, json_object_new_string("tabla"));
+    return mysql_res_a_json(resultado);
+}
 
-    int          cant_tablas = mysql_num_rows(resultado); // Cantidad de tablas.
-    json_object* arreglo     = json_object_new_array(); // Arreglo con las tablas.
-    MYSQL_ROW    fila;
-    while ((fila = mysql_fetch_row(resultado)) != NULL)
+json_object* mysql_res_a_json(MYSQL_RES* resultado)
+{
+    // Longitud de string para cada fila:
+    int          cant_columnas    = mysql_num_fields(resultado);
+    int          tam_fila         = 0;
+    json_object* arreglo_columnas = json_object_new_array();
+    MYSQL_FIELD* columna;
+    while ((columna = mysql_fetch_field(resultado)))
     {
         json_object_array_add(
-            arreglo,
-            json_object_new_string(fila[0])
-        );
+            arreglo_columnas,
+            json_object_new_string(columna->name));
+
+        tam_fila += columna->length + 1;
+    }
+
+    // Arreglo con cada fila del resultado:
+    json_object* arreglo = json_object_new_array(); // Arreglo con las tablas.
+    MYSQL_ROW    fila;
+    int          i       = 0;
+    while ((fila = mysql_fetch_row(resultado)))
+    {
+        // Arreglo JSON con cada valor de la fila:
+        json_object* arreglo_fila = json_object_new_array();
+        for (int c = 0; c < cant_columnas; c++)
+        {
+            json_object_array_add(
+                arreglo_fila,
+                json_object_new_string(fila[c])
+            );
+        }
+        json_object_array_add(arreglo, arreglo_fila);
+        i++;
     }
 
     mysql_free_result(resultado); // Liberar resultado.
 
     // Regresar resultado como objeto JSON:
-    json_object* objeto             = json_object_new_object();
-    json_object* objeto_cant_tablas = json_object_new_int(cant_tablas);
+    json_object* objeto            = json_object_new_object();
+    json_object* objeto_cant_filas = json_object_new_int(i);
 
-    json_object_object_add(objeto, "cantidad", objeto_cant_tablas);
+    json_object_object_add(objeto, "cantidad", objeto_cant_filas);
     json_object_object_add(objeto, "columnas", arreglo_columnas);
     json_object_object_add(objeto, "filas", arreglo);
     return objeto;
