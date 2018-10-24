@@ -8,12 +8,12 @@
 #include "json-util.h"
 
 // Constantes =========================================================
-#define ARCHIVO "config.json"
-#define KEY_HOST "host"
-#define KEY_PORT "puerto"
-#define KEY_BASE "base"
-#define KEY_USER "usuario"
-#define KEY_PASS "contraseña"
+#define ARCHIVO      "config.json"
+#define KEY_HOST     "host"
+#define KEY_PORT     "puerto"
+#define KEY_BASE     "base"
+#define KEY_USER     "usuario"
+#define KEY_PASS     "contraseña"
 #define KEY_CONSULTA "sql"
 
 // Globales ===========================================================
@@ -27,7 +27,6 @@ const char* consulta;
 
 // Funciones ==========================================================
 void importar_config();
-void importar_consulta();
 PGconn* conectar();
 void prueba_consulta(PGconn*);
 
@@ -38,7 +37,6 @@ json_object* postgres_res_a_json(PGresult* resultado);
 int main(int argc, char **argv)
 {
     importar_config();
-    importar_consulta();
     PGconn* conexion = conectar();
     prueba_consulta(conexion);
     PQfinish(conexion);
@@ -59,13 +57,7 @@ void importar_config()
         printf("No se pudo leer el host (Clave: %s)...\n", KEY_HOST);
         exit(1);
     }
-
-    puerto = json_get_string(objeto, KEY_PORT);
-    if (!host)
-    {
-        printf("No se pudo leer el puerto (Clave: %s)...\n", KEY_PORT);
-        exit(1);
-    }
+    printf("Host:          '%s'\n", host);
 
     base = json_get_string(objeto, KEY_BASE);
     if (!base)
@@ -73,6 +65,7 @@ void importar_config()
         printf("No se pudo leer el nombre de la base de datos (Clave: %s)...\n", KEY_BASE);
         exit(1);
     }
+    printf("Base de datos: '%s'\n", base);
 
     usuario = json_get_string(objeto, KEY_USER);
     if (!usuario)
@@ -80,6 +73,7 @@ void importar_config()
         printf("No se pudo leer el nombre de usuario (Clave: %s)...\n", KEY_USER);
         exit(1);
     }
+    printf("Usuario:       '%s'\n", usuario);
 
     contrasena = json_get_string(objeto, KEY_PASS);
     if (!contrasena)
@@ -87,16 +81,7 @@ void importar_config()
         printf("No se pudo leer la contraseña (Clave: %s)...\n", KEY_PASS);
         exit(1);
     }
-}
-
-void importar_consulta()
-{
-    json_object* objeto = json_object_from_file("consulta.json");
-    if (!objeto)
-    {
-        printf("No se pudo importar la consulta...\n");
-        exit(1);
-    }
+    //~ printf("Contraseña: '%s'\n", contrasena);
 
     consulta = json_get_string(objeto, KEY_CONSULTA);
     if (!consulta)
@@ -104,7 +89,8 @@ void importar_consulta()
         printf("No se pudo leer la consulta (Clave: %s)...\n", KEY_CONSULTA);
         exit(1);
     }
-    printf("Consulta importada: \n\"%s\"\n\n", consulta);
+    printf("Consulta:      '%s'\n", consulta);
+    printf("----------------------------------------\n");
 }
 
 PGconn* conectar()
@@ -123,8 +109,8 @@ PGconn* conectar()
 
 void prueba_consulta(PGconn* conexion)
 {
-    //~ json_object* resultado = postgres_consulta(conexion, consulta);
-    json_object* resultado = postgres_tablas(conexion);
+    json_object* resultado = postgres_consulta(conexion, consulta);
+    //~ json_object* resultado = postgres_tablas(conexion);
     if (!resultado)
     {
         return;

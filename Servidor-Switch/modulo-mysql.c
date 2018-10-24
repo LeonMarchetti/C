@@ -65,7 +65,6 @@ json_object* mysql_res_a_json(MYSQL_RES* resultado)
 {
     // Longitud de string para cada fila:
     int          cant_columnas    = mysql_num_fields(resultado);
-    int          tam_fila         = 0;
     json_object* arreglo_columnas = json_object_new_array();
     MYSQL_FIELD* columna;
     while ((columna = mysql_fetch_field(resultado)))
@@ -73,14 +72,12 @@ json_object* mysql_res_a_json(MYSQL_RES* resultado)
         json_object_array_add(
             arreglo_columnas,
             json_object_new_string(columna->name));
-
-        tam_fila += columna->length + 1;
     }
 
     // Arreglo con cada fila del resultado:
     json_object* arreglo = json_object_new_array(); // Arreglo con las tablas.
-    MYSQL_ROW    fila;
     int          i       = 0;
+    MYSQL_ROW    fila;
     while ((fila = mysql_fetch_row(resultado)))
     {
         // Arreglo JSON con cada valor de la fila:

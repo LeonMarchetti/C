@@ -1,7 +1,9 @@
 {
-    "host": "192.168.1.33",
-    "puerto": 5432,
-    "base": "Facturacion",
-    "usuario": "postgres",
-    "contraseña": ""
+    "host":       "192.168.1.33",
+    "puerto":     5432,
+    "base":       "Facturacion",
+    "usuario":    "postgres",
+    "contraseña": "",
+
+    "sql":        "Select * From public.\"Cliente\""
 }

@@ -1,7 +1,9 @@
 {
-    "host": "127.0.0.1",
-    "puerto": 3306,
-    "base": "Facturacion",
-    "usuario": "root",
-    "contraseña": ""
+    "host":       "127.0.0.1",
+    "puerto":     3306,
+    "base":       "Facturacion",
+    "usuario":    "root",
+    "contraseña": "",
+
+    "sql":        "Delete From Cliente Where ID = 100"
 }

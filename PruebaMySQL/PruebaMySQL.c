@@ -8,12 +8,12 @@
 #include "json-util.h"
 
 // Constantes =========================================================
-#define ARCHIVO "config.json"
-#define KEY_HOST "host"
-#define KEY_BASE "base"
-#define KEY_USER "usuario"
-#define KEY_PASS "contraseña"
-const char* CONSULTA = "Select * From Cliente";
+#define ARCHIVO      "config.json"
+#define KEY_CONSULTA "sql"
+#define KEY_HOST     "host"
+#define KEY_BASE     "base"
+#define KEY_USER     "usuario"
+#define KEY_PASS     "contraseña"
 
 // Globales ===========================================================
 // Servidor MySQL:
@@ -21,17 +21,20 @@ const char* host;
 const char* base;
 const char* usuario;
 const char* contrasena;
+const char* consulta;
 
 // Funciones ==========================================================
 MYSQL* conectar();
-void consultar(MYSQL*, const char*);
-void importar_config();
 
+void consultar(MYSQL*, const char*);
+void importar_consulta();
+void importar_config();
 void prueba_consulta(MYSQL*);
 
 json_object* mysql_tablas(void*);
 json_object* mysql_consulta(void* conexion, const char* consulta);
 json_object* mysql_res_a_json(MYSQL_RES* resultado);
+
 
 int main(int argc, char **argv)
 {
@@ -120,6 +123,7 @@ void importar_config()
         printf("No se pudo leer el host (Clave: %s)...\n", KEY_HOST);
         exit(1);
     }
+    printf("Host:          '%s'\n", host);
 
     base = json_get_string(objeto, KEY_BASE);
     if (!base)
@@ -127,6 +131,7 @@ void importar_config()
         printf("No se pudo leer el nombre de la base de datos (Clave: %s)...\n", KEY_BASE);
         exit(1);
     }
+    printf("Base de datos: '%s'\n", base);
 
     usuario = json_get_string(objeto, KEY_USER);
     if (!usuario)
@@ -134,6 +139,7 @@ void importar_config()
         printf("No se pudo leer el nombre de usuario (Clave: %s)...\n", KEY_USER);
         exit(1);
     }
+    printf("Usuario:       '%s'\n", usuario);
 
     contrasena = json_get_string(objeto, KEY_PASS);
     if (!contrasena)
@@ -141,12 +147,23 @@ void importar_config()
         printf("No se pudo leer la contraseña (Clave: %s)...\n", KEY_PASS);
         exit(1);
     }
+    //~ printf("Contraseña: '%s'\n", contrasena);
+
+    consulta = json_get_string(objeto, KEY_CONSULTA);
+    if (!consulta)
+    {
+        printf("No se pudo leer la consulta (Clave: %s)...\n", KEY_CONSULTA);
+        exit(1);
+    }
+    printf("Consulta:      '%s'\n", consulta);
+    printf("----------------------------------------\n");
 }
 
 void prueba_consulta(MYSQL* conexion)
 {
+    json_object* resultado = mysql_consulta(conexion, consulta);
     //~ json_object* resultado = mysql_consulta(conexion, CONSULTA);
-    json_object* resultado = mysql_tablas(conexion);
+    //~ json_object* resultado = mysql_tablas(conexion);
 
     if (!resultado)
     {
@@ -154,45 +171,44 @@ void prueba_consulta(MYSQL* conexion)
         return;
     }
 
+
     json_object* objeto_cantidad;
     json_object_object_get_ex(resultado, "cantidad", &objeto_cantidad);
-    int cant_filas = json_object_get_int(objeto_cantidad);
-    if (cant_filas <= 0)
+    if (json_object_get_int(objeto_cantidad) <= 0)
     {
-        printf("Resultado vacío\n");
+        printf("No hay resultado para mostrar...\n");
         return;
     }
-    printf("Filas: %d\n", cant_filas);
+    printf("Filas: %d\n", json_object_get_int(objeto_cantidad));
 
-    // Columnas:
-    json_object* arreglo_columnas;
-    json_object_object_get_ex(resultado, "columnas", &arreglo_columnas);
-    int i = 0;
+    // Mostrar nombres de columnas ============================================
+    json_object* arr_columnas;
+    json_object_object_get_ex(resultado, "columnas", &arr_columnas);
+
+    int          i = 0;
     json_object* obj_columna;
+
     printf("Fila\t");
-    while ((obj_columna = json_object_array_get_idx(arreglo_columnas, i++)))
+    while ((obj_columna = json_object_array_get_idx(arr_columnas, i++)))
     {
         printf("|%s\t", json_object_get_string(obj_columna));
     }
-    printf("\n");
-    printf("----------------------------------------\n");
+    printf("\n----------------------------------------\n");
 
     // Iterar filas:
-    json_object* obj_filas;
-    json_object_object_get_ex(resultado, "filas", &obj_filas);
-    for (int f = 0; f < cant_filas; f++)
+    json_object* arr_filas;
+    json_object_object_get_ex(resultado, "filas", &arr_filas);
+
+    int          f = 0;
+    json_object* arr_fila;
+    while ((arr_fila = json_object_array_get_idx(arr_filas, f++)))
     {
         printf("%d\t", f);
-
-        json_object* obj_fila    = json_object_array_get_idx(obj_filas, f);
-        int          cant_celdas = json_object_array_length(obj_fila);
-
-        // Iterar celdas:
-        for (int c = 0; c < cant_celdas; c++)
+        int          c = 0;
+        json_object* obj_celda;
+        while ((obj_celda = json_object_array_get_idx(arr_fila, c++)))
         {
-            json_object* obj_celda = json_object_array_get_idx(obj_fila, c);
-            const char* celda = json_object_get_string(obj_celda);
-            printf("|%s\t", celda);
+            printf("|%s\t", json_object_get_string(obj_celda));
         }
         printf("\n");
     }
