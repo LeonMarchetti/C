@@ -6,15 +6,18 @@
 const char* ARCHIVO = "ejemplo.json";
 
 // Funciones ==========================================================
-void prueba_importar_objeto();
-void prueba_nuevo_objeto();
+void         prueba_importar_objeto();
+void         prueba_nuevo_objeto();
 json_object* importar_de_archivo();
 json_object* importar_de_string();
+const char*  json_get_string(json_object* objeto, char* clave);
+void         prueba_importar_atributo_inexistente();
 
 
 int main(int argc, char **argv)
 {
-    prueba_importar_objeto();
+    //~ prueba_importar_objeto();
+    prueba_importar_atributo_inexistente();
     //~ prueba_nuevo_objeto();
 }
 
@@ -121,4 +124,25 @@ void prueba_nuevo_objeto()
 
     // Mostrar:
     printf("%s\n", json_object_to_json_string(objeto));
+}
+
+const char* json_get_string(json_object* objeto, char* clave)
+{
+    json_object* objeto_hijo;
+    json_object_object_get_ex(objeto, clave, &objeto_hijo);
+    return json_object_get_string(objeto_hijo);
+}
+
+void prueba_importar_atributo_inexistente()
+{
+    json_object* objeto_json = importar_de_archivo();
+    const char* atributo = json_get_string(objeto_json, "blah");
+    if (atributo)
+    {
+        printf("atributo: '%s'\n", atributo);
+    }
+    else
+    {
+        printf("El atributo 'blah' no existe...\n");
+    }
 }
