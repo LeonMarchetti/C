@@ -1,17 +1,19 @@
 CC=gcc
 CFLAGS=-Wall -pthread
+DEBUG=-g
 
 INCLUDES=-I /usr/include/json-c -I /usr/include/mysql -I /usr/include/postgresql
 LFLAGS=-L /usr/lib
 LIBS=-l json-c -l mysqlclient -l pq
 
+DEBUG_DIR=./debug/
 OBJ_DIR=./object/
-TARGET_OBJ=${OBJ_DIR}*.o
 RUN_DIR=./run/
 
 PRJ_NOM=Servidor-Switch
 SOURCE=${PRJ_NOM}.c
 TARGET=${RUN_DIR}${PRJ_NOM}.exe
+DEBUG_TARGET=${DEBUG_DIR}${PRJ_NOM}.exe
 OBJ_SRC=${SRV_OBJ} ${JSN_OBJ} ${MySQL_OBJ} ${PG_OBJ}
 
 # Servidor
@@ -37,6 +39,8 @@ PG_OBJ=${OBJ_DIR}${PG}.o
 
 all: ${TARGET}
 
+debug: ${DEBUG_TARGET}
+
 ${SRV_OBJ}: ${SRV_SRC}
 	${CC} ${CFLAGS} ${INCLUDES} -o ${SRV_OBJ} -c ${SRV_SRC} ${LFLAGS} ${LIBS}
 
@@ -51,6 +55,9 @@ ${PG_OBJ}: ${PG_SRC}
 
 ${TARGET}: ${SOURCE} ${OBJ_SRC}
 	${CC} ${CFLAGS} ${INCLUDES} -o ${TARGET} ${SOURCE} ${OBJ_SRC} ${LFLAGS} ${LIBS}
+
+${DEBUG_TARGET}: ${SOURCE} ${OBJ_SRC}
+	${CC} ${CFLAGS} ${DEBUG} ${INCLUDES} -o ${DEBUG_TARGET} ${SOURCE} ${OBJ_SRC} ${LFLAGS} ${LIBS}
 
 clean:
 	${RM} ./object/*.o ./run/*.exe
