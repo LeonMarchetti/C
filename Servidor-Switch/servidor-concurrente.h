@@ -9,10 +9,10 @@ struct datos_t
 
 // Constantes =========================================================
 extern const char* CERRAR;
+extern const int   BUFFER;
 
 // Funciones ==========================================================
-void* atender(void*);
 void cliente(const char*, int);
-void servidor(const char*, int);
+void servidor(const char*, int, void*);
 
 #endif /* SERVIDOR_H_ */

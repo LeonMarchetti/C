@@ -2,7 +2,8 @@
                     // Bases de Datos
     "servidores" : [
         {   // MariaDB en XAMPP en Notebook:
-            "tipo": "mysql",
+            "nombre": "XAMPP",
+            "tipo": "m",
             "host": "127.0.0.1",
             "puerto": 3306,
             "bases_de_datos": [
@@ -19,8 +20,9 @@
             ]
         },
         {   // Postgres en MV Debian 9
-            "tipo": "postgres",
-            "host": "192.168.56.101",
+            "nombre": "MV_Postgres",
+            "tipo": "p",
+            "host": "192.168.1.33",
             "puerto": 5432,
             "bases_de_datos": [
                 {

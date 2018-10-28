@@ -14,49 +14,6 @@ const int BUFFER = 256;
 const char* CERRAR = "\n";
 
 // Funciones ==========================================================
-void* atender(void *arg)
-{
-    // Para que el hilo termine cuando termine la función:
-    pthread_detach(pthread_self());
-
-    char buf_in[BUFFER];
-    char buf_out[BUFFER];
-    int nb;
-
-    // Recibo los datos pasados al hilo por el puntero:
-    struct datos_t *datos = (struct datos_t*) arg;
-
-    printf("[Hilo][%d] Atendiendo socket\n", datos->socket);
-
-    while (1)
-    {
-        // Recibir datos:
-        nb = read(datos->socket, buf_in, BUFFER);
-        buf_in[nb] = '\0';
-
-        // Presionar solo enter para terminar la sesión
-        if (!strcmp(buf_in, CERRAR))
-        {
-            break;
-        }
-        buf_in[nb-1] = '\0'; // Saco el salto de línea
-        sprintf(buf_out, "Recibido \"%s\"", buf_in);
-
-        // Mostrar en pantalla:
-        printf("[Hilo][%d] %s\n", datos->socket, buf_out);
-
-        // Enviar datos:
-        write(datos->socket, buf_out, BUFFER);
-    }
-
-    // Cerrar socket:
-    close(datos->socket);
-    printf("[Hilo][%d] Socket cerrado\n", datos->socket);
-
-    free(datos);
-    return NULL;
-}
-
 void cliente(const char* host, int puerto)
 {
     struct sockaddr_in c_sock;
@@ -110,7 +67,7 @@ void cliente(const char* host, int puerto)
     close(idsockc);
 }
 
-void servidor(const char* host, int puerto)
+void servidor(const char* host, int puerto, void* atender)
 {
     struct sockaddr_in s_sock;
     struct sockaddr_in c_sock;

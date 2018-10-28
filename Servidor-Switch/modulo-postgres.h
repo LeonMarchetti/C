@@ -19,7 +19,7 @@
  * @returns Puntero a una estructura PostgreSQL.
  */
 void* postgres_conectar(const char* host, int puerto, const char* usuario,
-                     const char* contrasenia, const char* nombre_bd);
+                        const char* contrasenia, const char* nombre_bd);
 
 /** Cierra la conexión con la base de datos PostgreSQL.
  *
