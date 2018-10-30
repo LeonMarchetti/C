@@ -93,6 +93,53 @@ json_object* postgres_tablas(void* conexion)
     return objeto;
 }
 
+json_object* postgres_columnas(void* conexion, const char* tabla)
+{
+    /* Para realizar una consulta en postgres, tengo que referirme a las tablas
+     * como: esquema."tabla", por ej.: public."Cliente", por lo tanto tengo que
+     * separar el esquema y la tabla para hacer las consultas de metadatos.
+     */
+
+    // String temporal para strtok:
+    char tmp_tabla[strlen(tabla)];
+    strcpy(tmp_tabla, tabla);
+
+    char* schema = malloc(strlen(tabla)); // Esquema de la tabla
+    char* table  = malloc(strlen(tabla)); // Nombre de la tabla
+
+    // Separo el esquema y la tabla según el punto:
+    int   i      = 0;
+    char* token  = strtok(tmp_tabla, ".");
+    while (token != NULL)
+    {
+        switch (i++)
+        {
+            case 0: strcpy(schema, token); break;
+            case 1: strcpy(table, token);
+        }
+        token = strtok(NULL, ".");
+    }
+
+    // Reemplazo las comillas dobles por simples:
+    table[0] = '\'';
+    table[strlen(table)-1] = '\'';
+
+    // Hago la consulta:
+    const char* plantilla_sql = "Select * "
+                                    "From information_schema.columns "
+                                    "Where table_schema = '%s' And table_name = %s";
+    char*       consulta_2    = malloc(strlen(schema) + strlen(table) + strlen(plantilla_sql));
+    sprintf(consulta_2, plantilla_sql, schema, table);
+
+    json_object* resultado = postgres_consulta(conexion, consulta_2);
+
+    free(schema);
+    free(table);
+    free(consulta_2);
+
+    return resultado;
+}
+
 json_object* postgres_res_a_json(PGresult* resultado)
 {
     // Longitud de string para cada fila:
@@ -100,8 +147,9 @@ json_object* postgres_res_a_json(PGresult* resultado)
     json_object* arreglo_columnas = json_object_new_array();
     for (int c = 0; c < cant_columnas; c++)
     {
-        json_object_array_add(arreglo_columnas,
-                              json_object_new_string(PQfname(resultado, c)));
+        json_object_array_add(
+            arreglo_columnas,
+            json_object_new_string(PQfname(resultado, c)));
     }
 
     // Arreglo con cada fila del resultado:

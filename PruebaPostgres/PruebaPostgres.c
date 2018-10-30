@@ -28,17 +28,25 @@ const char* consulta;
 // Funciones ==========================================================
 void importar_config();
 PGconn* conectar();
+void analizar_resultado(json_object* resultado);
+
 void prueba_consulta(PGconn*);
+void prueba_columnas(PGconn*);
 
 json_object* postgres_consulta(void* conexion, const char* consulta);
 json_object* postgres_tablas(void* conexion);
+json_object* postgres_columnas(void* conexion, const char* tabla);
 json_object* postgres_res_a_json(PGresult* resultado);
 
 int main(int argc, char **argv)
 {
     importar_config();
     PGconn* conexion = conectar();
-    prueba_consulta(conexion);
+
+    // Prueba:
+    //~ prueba_consulta(conexion);
+    prueba_columnas(conexion);
+
     PQfinish(conexion);
 }
 
@@ -107,12 +115,11 @@ PGconn* conectar()
     return conexion;
 }
 
-void prueba_consulta(PGconn* conexion)
+void analizar_resultado(json_object* resultado)
 {
-    json_object* resultado = postgres_consulta(conexion, consulta);
-    //~ json_object* resultado = postgres_tablas(conexion);
     if (!resultado)
     {
+        printf("No se obtuvo resultado...\n");
         return;
     }
 
@@ -160,13 +167,26 @@ void prueba_consulta(PGconn* conexion)
     free(resultado);
 }
 
+void prueba_consulta(PGconn* conexion)
+{
+    json_object* resultado = postgres_consulta(conexion, consulta);
+    analizar_resultado(resultado);
+    //~ analizar_resultado(
+        //~ postgres_consulta(conexion, consulta));
+}
+
+void prueba_columnas(PGconn* conexion)
+{
+    analizar_resultado(postgres_columnas(conexion, "public.\"Factura\""));
+}
+
 json_object* postgres_consulta(void* conexion, const char* consulta)
 {
-    PGresult* resultado = PQexec((PGconn* ) conexion, consulta);
+    PGresult* resultado = PQexec((PGconn*) conexion, consulta);
     if (resultado == NULL ||
         PQresultStatus(resultado) != PGRES_TUPLES_OK)
     {
-        fprintf(stderr, "%s\n", PQerrorMessage((PGconn* ) conexion));
+        fprintf(stderr, "%s\n", PQerrorMessage((PGconn*) conexion));
         return NULL;
     }
     return postgres_res_a_json(resultado);
@@ -220,6 +240,61 @@ json_object* postgres_tablas(void* conexion)
     json_object_object_add(objeto, "columnas", arreglo_columnas);
     json_object_object_add(objeto, "filas", arreglo);
     return objeto;
+}
+
+json_object* postgres_columnas(void* conexion, const char* tabla)
+{
+    /* Para realizar una consulta en postgres, tengo que referirme a las tablas
+     * como: esquema."tabla", por ej.: public."Cliente", por lo tanto tengo que
+     * separar el esquema y la tabla para hacer las consultas de metadatos.
+     */
+
+    // String temporal para strtok:
+    char tmp_tabla[strlen(tabla)];
+    strcpy(tmp_tabla, tabla);
+
+    char* schema = malloc(strlen(tabla)); // Esquema de la tabla
+    char* table  = malloc(strlen(tabla)); // Nombre de la tabla
+
+    // Separo el esquema y la tabla según el punto:
+    int   i      = 0;
+    char* token  = strtok(tmp_tabla, ".");
+    while (token != NULL)
+    {
+        switch (i++)
+        {
+            case 0: strcpy(schema, token); break;
+            case 1: strcpy(table, token);
+        }
+        token = strtok(NULL, ".");
+    }
+
+    // Reemplazo las comillas dobles por simples:
+    table[0] = '\'';
+    table[strlen(table)-1] = '\'';
+
+    // Hago la consulta:
+    const char* plantilla_sql = "Select * "
+                                    "From information_schema.columns "
+                                    "Where table_schema = '%s' And table_name = %s";
+    char*       consulta_2    = malloc(strlen(schema) + strlen(table) + strlen(plantilla_sql));
+    sprintf(consulta_2, plantilla_sql, schema, table);
+
+    json_object* resultado = postgres_consulta(conexion, consulta_2);
+
+    free(schema);
+    free(table);
+    free(consulta_2);
+
+    return resultado;
+
+    //~ // Mensaje de error:
+    //~ fprintf(stderr, "postgres_columnas(void*, const char*): Esta función no está disponible...\n");
+    //~ return NULL;
+
+    //~ // Funciona:
+    //~ json_object* resultado = postgres_consulta(conexion, tabla);
+    //~ return resultado;
 }
 
 json_object* postgres_res_a_json(PGresult* resultado)

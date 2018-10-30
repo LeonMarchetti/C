@@ -1,9 +1,9 @@
 {
-    "host":       "192.168.1.33",
+    "host":       "192.168.1.38",
     "puerto":     5432,
     "base":       "Facturacion",
     "usuario":    "postgres",
     "contraseña": "",
 
-    "sql":        "Select * From public.\"Cliente\""
+    "sql":        "Select table_name From information_schema.columns Where table_schema = 'public' And table_name = 'Cliente'"
 }

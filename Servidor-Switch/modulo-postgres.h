@@ -27,7 +27,7 @@ void* postgres_conectar(const char* host, int puerto, const char* usuario,
  */
 void postgres_cerrar(void* conexion);
 
-/** Realiza una consulta a una base de datos MySQL.
+/** Realiza una consulta a una base de datos PostgreSQL.
  *
  * @param conexion Puntero a una estructura PostgreSQL
  * @param consulta Consulta de SQL.
@@ -36,12 +36,23 @@ void postgres_cerrar(void* conexion);
  */
 json_object* postgres_consulta(void* conexion, const char* consulta);
 
-/** Regresa los nombres de todas las tablas de la base de datos MySQL actual.
+/** Regresa los nombres de todas las tablas de la base de datos PostgreSQL
+ *  actual.
  *
  * @param conexion Puntero a una estructura PostgreSQL
  * @returns Objeto JSON, con un entero para la cantidad de tablas en el
  * resultado y un arreglo con los nombres de las tablas.
  */
 json_object* postgres_tablas(void* conexion);
+
+/** Regresa los nombres de todas las columnas de la tabla en la base de datos
+ *  PostgreSQL actual.
+ *
+ * @param conexion Puntero a una estructura PostgreSQL
+ * @param tabla Nombre de la tabla
+ * @returns Objeto JSON, con un entero para la cantidad de tablas en el
+ * resultado y un arreglo con los nombres de las columnas.
+ */
+json_object* postgres_columnas(void* conexion, const char* tabla);
 
 #endif /* POSTGRES_H_ */
