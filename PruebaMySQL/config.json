@@ -5,5 +5,5 @@
     "usuario":    "root",
     "contraseña": "",
 
-    "sql":        "Delete From Cliente Where ID = 100"
+    "sql":        "Select * From Factura"
 }

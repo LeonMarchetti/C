@@ -29,10 +29,15 @@ MYSQL* conectar();
 void consultar(MYSQL*, const char*);
 void importar_consulta();
 void importar_config();
+
 void prueba_consulta(MYSQL*);
+void prueba_columnas(MYSQL*);
+
+void separador();
 
 json_object* mysql_tablas(void*);
 json_object* mysql_consulta(void* conexion, const char* consulta);
+json_object* mysql_columnas(void* conexion, const char* tabla);
 json_object* mysql_res_a_json(MYSQL_RES* resultado);
 
 
@@ -46,7 +51,8 @@ int main(int argc, char **argv)
     }
 
     //~ consultar(conexion, CONSULTA);
-    prueba_consulta(conexion);
+    //~ prueba_consulta(conexion);
+    prueba_columnas(conexion);
     mysql_close(conexion);
 }
 
@@ -156,7 +162,7 @@ void importar_config()
         exit(1);
     }
     printf("Consulta:      '%s'\n", consulta);
-    printf("----------------------------------------\n");
+    separador();
 }
 
 void prueba_consulta(MYSQL* conexion)
@@ -217,6 +223,61 @@ void prueba_consulta(MYSQL* conexion)
     free(resultado);
 }
 
+void prueba_columnas(MYSQL* conexion)
+{
+    printf("Prueba Columnas...\n");
+    json_object* resultado = mysql_columnas(conexion, "Factura");
+    if (!resultado)
+    {
+        fprintf(stderr, "No se obtuvieron resultados\n");
+        return;
+    }
+
+    json_object* obj_cantidad;
+    json_object* obj_columnas;
+    json_object* obj_filas;
+
+    json_object_object_get_ex(resultado, "cantidad", &obj_cantidad);
+    json_object_object_get_ex(resultado, "columnas", &obj_columnas);
+    json_object_object_get_ex(resultado, "filas",    &obj_filas);
+
+    if (json_object_get_int(obj_cantidad) <= 0)
+    {
+        printf("No hay resultado para mostrar...\n");
+        return;
+    }
+    printf("Filas: %d\n", json_object_get_int(obj_cantidad));
+
+    // Mostrar nombres de columnas ============================================
+    int          i = 0;
+    json_object* obj_columna;
+    printf("Fila\t");
+    while ((obj_columna = json_object_array_get_idx(obj_columnas, i++)))
+    {
+        printf("|%s\t", json_object_get_string(obj_columna));
+    }
+    printf("\n");
+    separador();
+
+    // Iterar filas:
+    int          f = 0;
+    json_object* arr_fila;
+    while ((arr_fila = json_object_array_get_idx(obj_filas, f++)))
+    {
+        printf("%d\t", f);
+        int          c = 0;
+        json_object* obj_celda;
+        while ((obj_celda = json_object_array_get_idx(arr_fila, c++)))
+        {
+            printf("|%s\t", json_object_get_string(obj_celda));
+        }
+        printf("\n");
+    }
+
+    print_json(resultado);
+    free(resultado);
+}
+
 json_object* mysql_tablas(void* conexion)
 {
     MYSQL_RES* resultado = mysql_list_tables((MYSQL*) conexion, NULL);
@@ -249,11 +310,20 @@ json_object* mysql_consulta(void* conexion, const char* consulta)
     return mysql_res_a_json(resultado);
 }
 
+json_object* mysql_columnas(void* conexion, const char* tabla)
+{
+    const char* plantilla_sql = "Show Columns From %s";
+    char*       consulta      = malloc(strlen(tabla) + strlen(plantilla_sql));
+
+    sprintf(consulta, plantilla_sql, tabla);
+    printf("'%s'\n", consulta);
+    return mysql_consulta(conexion, consulta);
+}
+
 json_object* mysql_res_a_json(MYSQL_RES* resultado)
 {
     // Longitud de string para cada fila:
     int          cant_columnas    = mysql_num_fields(resultado);
-    int          tam_fila         = 0;
     json_object* arreglo_columnas = json_object_new_array();
     MYSQL_FIELD* columna;
     while ((columna = mysql_fetch_field(resultado)))
@@ -261,14 +331,12 @@ json_object* mysql_res_a_json(MYSQL_RES* resultado)
         json_object_array_add(
             arreglo_columnas,
             json_object_new_string(columna->name));
-
-        tam_fila += columna->length + 1;
     }
 
     // Arreglo con cada fila del resultado:
     json_object* arreglo = json_object_new_array(); // Arreglo con las tablas.
-    MYSQL_ROW    fila;
     int          i       = 0;
+    MYSQL_ROW    fila;
     while ((fila = mysql_fetch_row(resultado)))
     {
         // Arreglo JSON con cada valor de la fila:
@@ -277,8 +345,8 @@ json_object* mysql_res_a_json(MYSQL_RES* resultado)
         {
             json_object_array_add(
                 arreglo_fila,
-                json_object_new_string(fila[c])
-            );
+                json_object_new_string(
+                    (fila[c]) ? fila[c] : "NULL"));
         }
         json_object_array_add(arreglo, arreglo_fila);
         i++;
@@ -294,4 +362,13 @@ json_object* mysql_res_a_json(MYSQL_RES* resultado)
     json_object_object_add(objeto, "columnas", arreglo_columnas);
     json_object_object_add(objeto, "filas", arreglo);
     return objeto;
+}
+
+void separador()
+{
+    char SEPARADOR[80];
+    memset(SEPARADOR, '-', 79);
+    SEPARADOR[78] = '\n';
+    SEPARADOR[79] = 0;
+    printf(SEPARADOR);
 }

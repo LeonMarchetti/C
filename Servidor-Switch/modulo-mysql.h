@@ -44,4 +44,14 @@ json_object* mysql_consulta(void* conexion, const char* consulta);
  */
 json_object* mysql_tablas(void* conexion);
 
+/** Regresa los nombres de todas las columnas de la tabla en la base de datos
+ *  MySQL actual.
+ *
+ * @param conexion Puntero a una estructura MySQL
+ * @param tabla Nombre de la tabla
+ * @returns Objeto JSON, con un entero para la cantidad de tablas en el
+ * resultado y un arreglo con los nombres de las columnas.
+ */
+json_object* mysql_columnas(void* conexion, const char* tabla);
+
 #endif /* MYSQL_H_ */

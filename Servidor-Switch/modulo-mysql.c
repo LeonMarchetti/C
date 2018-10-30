@@ -45,7 +45,6 @@ json_object* mysql_consulta(void* conexion, const char* consulta)
         fprintf(stderr, "%s\n", mysql_error((MYSQL*) conexion));
         return NULL;
     }
-
     return mysql_res_a_json(resultado);
 }
 
@@ -57,8 +56,16 @@ json_object* mysql_tablas(void* conexion)
         fprintf(stderr, "%s\n", mysql_error((MYSQL*) conexion));
         return NULL;
     }
-
     return mysql_res_a_json(resultado);
+}
+
+json_object* mysql_columnas(void* conexion, const char* tabla)
+{
+    const char* plantilla_sql = "Show Columns From %s";
+    char*       consulta      = malloc(strlen(tabla) + strlen(plantilla_sql));
+
+    sprintf(consulta, plantilla_sql, tabla);
+    return mysql_consulta(conexion, consulta);
 }
 
 json_object* mysql_res_a_json(MYSQL_RES* resultado)
@@ -86,8 +93,8 @@ json_object* mysql_res_a_json(MYSQL_RES* resultado)
         {
             json_object_array_add(
                 arreglo_fila,
-                json_object_new_string(fila[c])
-            );
+                json_object_new_string(
+                    (fila[c]) ? fila[c] : "NULL"));
         }
         json_object_array_add(arreglo, arreglo_fila);
         i++;
