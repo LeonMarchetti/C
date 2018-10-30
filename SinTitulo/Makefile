@@ -1,12 +1,16 @@
 CC=gcc
 CFLAGS=-Wall -pthread
+DEBUG=-g
 
+DEBUG_DIR=./debug/
 OBJ_DIR=./object/
 RUN_DIR=./run/
 
 PRJ_NOM=SinTitulo
 SOURCE=${PRJ_NOM}.c
 TARGET=${RUN_DIR}${PRJ_NOM}.exe
+DEBUG_TARGET=${DEBUG_DIR}${PRJ_NOM}.exe
+OBJ_SRC=${HEADER_OBJECT}
 
 HEADER=header
 HEADER_SOURCE=${HEADER}.c
@@ -14,11 +18,16 @@ HEADER_OBJECT=${OBJ_DIR}${HEADER}.o
 
 all: ${TARGET}
 
+debug: ${DEBUG_TARGET}
+
 ${HEADER_OBJECT}: ${HEADER_SOURCE}
 	${CC} ${CFLAGS} -c ${HEADER_SOURCE} -o ${HEADER_OBJECT}
 
-${TARGET}: ${SOURCE} ${HEADER_OBJECT}
-	${CC} ${CFLAGS} -o ${TARGET} ${SOURCE} ${HEADER_OBJECT}
+${TARGET}: ${SOURCE} ${OBJ_SRC}
+	${CC} ${CFLAGS} -o ${TARGET} ${SOURCE} ${OBJ_SRC}
+
+${DEBUG_TARGET}: ${SOURCE} ${OBJ_SRC}
+	${CC} ${CFLAGS} ${DEBUG} ${INCLUDES} -o ${DEBUG_TARGET} ${SOURCE} ${OBJ_SRC} ${LFLAGS} ${LIBS}
 
 clean:
 	${RM} ./object/*.o ./run/*.exe
