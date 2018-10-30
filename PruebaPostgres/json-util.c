@@ -3,6 +3,7 @@
 
 #include <json.h>
 #include <stdio.h>
+#include <string.h>
 
 // Constantes =========================================================
 
@@ -16,8 +17,10 @@ const char* json_get_string(json_object* objeto, char* clave)
 
 void print_json(json_object* objeto)
 {
+    const char* string_rep = json_object_to_json_string_ext(objeto, 0);
     printf("========================================\n");
     printf("String JSON:\n");
-    printf("%s\n", json_object_to_json_string_ext(objeto, 0));
+    printf("%s\n", string_rep);
+    printf("-----\nTamaño string: %ld\n", strlen(string_rep));
     printf("========================================\n");
 }
