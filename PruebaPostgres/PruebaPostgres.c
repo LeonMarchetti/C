@@ -30,9 +30,11 @@ void importar_config();
 PGconn* conectar();
 void analizar_resultado(json_object* resultado);
 
+void prueba_bases_de_datos(PGconn*);
 void prueba_consulta(PGconn*);
 void prueba_columnas(PGconn*);
 
+json_object* postgres_bases_de_datos(void* conexion);
 json_object* postgres_consulta(void* conexion, const char* consulta);
 json_object* postgres_tablas(void* conexion);
 json_object* postgres_columnas(void* conexion, const char* tabla);
@@ -44,8 +46,9 @@ int main(int argc, char **argv)
     PGconn* conexion = conectar();
 
     // Prueba:
+    prueba_bases_de_datos(conexion);
     //~ prueba_consulta(conexion);
-    prueba_columnas(conexion);
+    //~ prueba_columnas(conexion);
 
     PQfinish(conexion);
 }
@@ -66,6 +69,14 @@ void importar_config()
         exit(1);
     }
     printf("Host:          '%s'\n", host);
+
+    puerto = json_get_string(objeto, KEY_PORT);
+    if (!puerto)
+    {
+        printf("No se pudo leer el puerto (Clave: %s)...\n", KEY_HOST);
+        exit(1);
+    }
+    printf("Puerto:          '%s'\n", puerto);
 
     base = json_get_string(objeto, KEY_BASE);
     if (!base)
@@ -140,30 +151,36 @@ void analizar_resultado(json_object* resultado)
     json_object_object_get_ex(resultado, "columnas", &arreglo_columnas);
     int i = 0;
     json_object* obj_columna;
-    printf("Fila\t");
+    printf("|Fila");
     while ((obj_columna = json_object_array_get_idx(arreglo_columnas, i++)))
     {
-        printf("|%s\t", json_object_get_string(obj_columna));
+        printf("|%-20s", json_object_get_string(obj_columna));
     }
-    printf("\n");
-    printf("----------------------------------------\n");
+    printf("|\n");
 
     // Iterar filas:
     int          f = 0;
     json_object* arreglo_fila;
     while((arreglo_fila = json_object_array_get_idx(filas, f++)))
     {
-        printf("%d\t", f);
+        printf("|%-4d", f);
         int          c = 0;
         json_object* obj_celda;
         while ((obj_celda = json_object_array_get_idx(arreglo_fila, c++)))
         {
-            printf("|%s\t", json_object_get_string(obj_celda));
+            printf("|%-20s", json_object_get_string(obj_celda));
         }
-        printf("\n");
+        printf("|\n");
     }
 
+    // Como queda el string JSON del objeto, que voy a enviar por el socket:
     print_json(resultado);
+}
+
+void prueba_bases_de_datos(PGconn* conexion)
+{
+    json_object* resultado = postgres_bases_de_datos(conexion);
+    analizar_resultado(resultado);
     free(resultado);
 }
 
@@ -171,13 +188,22 @@ void prueba_consulta(PGconn* conexion)
 {
     json_object* resultado = postgres_consulta(conexion, consulta);
     analizar_resultado(resultado);
-    //~ analizar_resultado(
-        //~ postgres_consulta(conexion, consulta));
+    free(resultado);
 }
 
 void prueba_columnas(PGconn* conexion)
 {
-    analizar_resultado(postgres_columnas(conexion, "public.\"Factura\""));
+    json_object* resultado = postgres_columnas(conexion, "public.\"Factura\"");
+    analizar_resultado(resultado);
+    free(resultado);
+}
+
+json_object* postgres_bases_de_datos(void* conexion)
+{
+    const char* consulta = "Select datname "
+                               "From pg_database "
+                               "Where datistemplate = false";
+    return postgres_consulta(conexion, consulta);
 }
 
 json_object* postgres_consulta(void* conexion, const char* consulta)
