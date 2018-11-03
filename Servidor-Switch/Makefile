@@ -14,7 +14,7 @@ PRJ_NOM=Servidor-Switch
 SOURCE=${PRJ_NOM}.c
 TARGET=${RUN_DIR}${PRJ_NOM}.exe
 DEBUG_TARGET=${DEBUG_DIR}${PRJ_NOM}.exe
-OBJ_SRC=${SRV_OBJ} ${JSN_OBJ} ${MySQL_OBJ} ${PG_OBJ}
+OBJ_SRC=${SRV_OBJ} ${JSN_OBJ} ${MySQL_OBJ} ${PG_OBJ} ${FB_OBJ}
 
 # Servidor
 SRV=servidor-concurrente
@@ -36,6 +36,11 @@ PG=modulo-postgres
 PG_SRC=${PG}.c
 PG_OBJ=${OBJ_DIR}${PG}.o
 
+# Módulo Firebird
+FB=modulo-firebird
+FB_SRC=${FB}.c
+FB_OBJ=${OBJ_DIR}${FB}.o
+
 
 all: ${TARGET}
 
@@ -52,6 +57,9 @@ ${MySQL_OBJ}: ${MySQL_SRC}
 
 ${PG_OBJ}: ${PG_SRC}
 	${CC} ${CFLAGS} ${INCLUDES} -o ${PG_OBJ} -c ${PG_SRC} ${LFLAGS} ${LIBS}
+
+${FB_OBJ}: ${FB_SRC}
+	${CC} ${CFLAGS} ${INCLUDES} -o ${FB_OBJ} -c ${FB_SRC} ${LFLAGS} ${LIBS}
 
 ${TARGET}: ${SOURCE} ${OBJ_SRC}
 	${CC} ${CFLAGS} ${INCLUDES} -o ${TARGET} ${SOURCE} ${OBJ_SRC} ${LFLAGS} ${LIBS}
