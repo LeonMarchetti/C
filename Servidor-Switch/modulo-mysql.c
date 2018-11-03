@@ -68,6 +68,17 @@ json_object* mysql_columnas(void* conexion, const char* tabla)
     return mysql_consulta(conexion, consulta);
 }
 
+json_object* mysql_bases_de_datos(void* conexion)
+{
+    MYSQL_RES* resultado = mysql_list_dbs(conexion, NULL);
+    if (!resultado)
+    {
+        fprintf(stderr, "%s\n", mysql_error((MYSQL*) conexion));
+        return NULL;
+    }
+    return mysql_res_a_json(resultado);
+}
+
 json_object* mysql_res_a_json(MYSQL_RES* resultado)
 {
     // Longitud de string para cada fila:
@@ -111,3 +122,4 @@ json_object* mysql_res_a_json(MYSQL_RES* resultado)
     json_object_object_add(objeto, "filas", arreglo);
     return objeto;
 }
+

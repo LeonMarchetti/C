@@ -55,4 +55,13 @@ json_object* postgres_tablas(void* conexion);
  */
 json_object* postgres_columnas(void* conexion, const char* tabla);
 
+/** Regresa los nombres de todas las bases de datos en el servidor PostgreSQL
+ * actual.
+ *
+ * @param conexion Puntero a una estructura PostgreSQL
+ * @returns Objeto JSON, con un entero para la cantidad de filas en el
+ * resultado y un arreglo con las filas.
+ */
+json_object* postgres_bases_de_datos(void* conexion);
+
 #endif /* POSTGRES_H_ */

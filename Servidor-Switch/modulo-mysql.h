@@ -39,8 +39,8 @@ json_object* mysql_consulta(void* conexion, const char* consulta);
 /** Regresa los nombres de todas las tablas de la base de datos MySQL actual.
  *
  * @param conexion Puntero a una estructura MySQL
- * @returns Objeto JSON, con un entero para la cantidad de tablas en el
- * resultado y un arreglo con los nombres de las tablas.
+ * @returns Objeto JSON, con un entero para la cantidad de filas en el
+ * resultado y un arreglo con las filas.
  */
 json_object* mysql_tablas(void* conexion);
 
@@ -49,9 +49,18 @@ json_object* mysql_tablas(void* conexion);
  *
  * @param conexion Puntero a una estructura MySQL
  * @param tabla Nombre de la tabla
- * @returns Objeto JSON, con un entero para la cantidad de tablas en el
- * resultado y un arreglo con los nombres de las columnas.
+ * @returns Objeto JSON, con un entero para la cantidad de filas en el
+ * resultado y un arreglo con las filas.
  */
 json_object* mysql_columnas(void* conexion, const char* tabla);
+
+/** Regresa los nombres de todas las bases de datos en el servidor MySQL
+ * actual.
+ *
+ * @param conexion Puntero a una estructura MySQL
+ * @returns Objeto JSON, con un entero para la cantidad de filas en el
+ * resultado y un arreglo con las filas.
+ */
+json_object* mysql_bases_de_datos(void* conexion);
 
 #endif /* MYSQL_H_ */
