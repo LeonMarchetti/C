@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "json-util.h"
+#include "modulo-firebird.h"
 #include "modulo-mysql.h"
 #include "modulo-postgres.h"
 #include "servidor-concurrente.h"
@@ -49,6 +50,13 @@ void  print_servidores_json();
 void  conectar_basesdedatos();
 void  cantidad_basesdedatos();
 void  print_arreglo_bds();
+
+json_object* atender_consulta(json_object* datos, struct basedatos_t* bd);
+json_object* atender_lista_atributos(json_object* datos, struct basedatos_t* bd);
+json_object* atender_lista_bds(json_object* datos, struct basedatos_t* bd);
+json_object* atender_lista_tablas(json_object* datos, struct basedatos_t* bd);
+
+struct basedatos_t* buscar_conexion(const char*, const char*);
 
 
 int main(int argc, char **argv)
@@ -120,7 +128,7 @@ void* atender(void *arg)
 
     char buf_in[BUFFER];
     char buf_out[BUFFER];
-    int nb;
+    int  nb;
 
     // Recibo los datos pasados al hilo por el puntero:
     struct datos_t *datos = (struct datos_t*) arg;
@@ -141,28 +149,48 @@ void* atender(void *arg)
         buf_in[nb-1] = '\0'; // Saco el salto de línea
 
         // Convierto los datos recibidos a JSON:
-        json_object* objeto = json_tokener_parse(buf_in);
-        if (objeto)
+        json_object* obj_in = json_tokener_parse(buf_in);
+        if (obj_in)
         {
             // Mostrar en pantalla:
             printf("[Hilo][%d] %s\n",
                 datos->socket,
-                json_object_to_json_string_ext(objeto, 0));
+                json_object_to_json_string_ext(obj_in, 0));
 
-            // comando:
-            const char* comando = json_get_string(objeto, "comando");
+            json_object*        resultado;
+            const char*         bd       = json_get_string(obj_in, "base_de_datos");
+            const char*         comando  = json_get_string(obj_in, "comando");
+            const char*         servidor = json_get_string(obj_in, "servidor");
+            struct basedatos_t* conexion = buscar_conexion(servidor, bd);
+
+            if (!conexion)
+            {
+                printf("No se encontró la base de datos buscada\n\tServidor: '%s'\n\tBase de datos: '%s'\n",
+                    servidor, bd);
+            }
+
             if (comando)
             {
                 switch (comando[0])
                 {
                     case 'a': // Listar atributos de tabla
+                        resultado = atender_lista_atributos(obj_in, conexion);
                         break;
+
                     case 'b': // Listar bases de datos
+                        resultado = atender_lista_bds(obj_in, conexion);
                         break;
+
                     case 'q': // Consulta
+                        resultado = atender_consulta(obj_in, conexion);
                         break;
+
                     case 't': // Listar tablas de base de datos
+                        resultado = atender_lista_tablas(obj_in, conexion);
                         break;
+
+                    default: // Comando inválido
+                        printf("Comando inválido: '%s'\n", comando);
                 }
             }
             else
@@ -287,7 +315,6 @@ void conectar_basesdedatos()
         {
             bases_de_datos[b].tipo = json_get_string(obj_servidor, "tipo")[0];
             strcpy(bases_de_datos[b].nom_servidor, json_get_string(obj_servidor, "nombre"));
-
             strcpy(bases_de_datos[b].nom_bd, json_get_string(obj_bd, "base"));
             const char* usuario     = json_get_string(obj_bd, "usuario");
             const char* contrasenia = json_get_string(obj_bd, "contraseña");
@@ -302,8 +329,7 @@ void conectar_basesdedatos()
                     bases_de_datos[b].conexion = postgres_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
                     break;
                 case TIPO_FIREBIRD:
-                    //~ bases_de_datos[b].conexion = firebird_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
-                    bases_de_datos[b].conexion = NULL;
+                    bases_de_datos[b].conexion = firebird_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
                     break;
                 default:
                     bases_de_datos[b].conexion = NULL;
@@ -314,10 +340,147 @@ void conectar_basesdedatos()
     }
 }
 
+struct basedatos_t* buscar_conexion(const char* servidor, const char* bd)
+{
+    if (!servidor)
+    {
+        return NULL;
+    }
+
+    for (int i = 0; i < cantidad_bds; i++)
+    {
+        struct basedatos_t bd_t = bases_de_datos[i];
+        if (strcmp(bd_t.nom_servidor, servidor) == 0)
+        {
+            if (!bd || strcmp(bd_t.nom_bd, bd) == 0)
+            {
+                return &bases_de_datos[i];
+            }
+        }
+    }
+    return NULL;
+}
+
 void print_arreglo_bds()
 {
     for (int i = 0; i < cantidad_bds; i++)
     {
-        printf("%c\t%15s\t%15s\t%p\n", bases_de_datos[i].tipo, bases_de_datos[i].nom_servidor, bases_de_datos[i].nom_bd, bases_de_datos[i].conexion);
+        printf("%c\t%15s\t%15s\t%p\n",
+            bases_de_datos[i].tipo,
+            bases_de_datos[i].nom_servidor,
+            bases_de_datos[i].nom_bd,
+            bases_de_datos[i].conexion);
     }
 }
+
+json_object* atender_consulta(json_object* datos, struct basedatos_t* bd)
+{
+    const char*  consulta  = json_get_string(datos, "consulta");
+    json_object* resultado;
+
+    switch (bd->tipo)
+    {
+        case TIPO_MYSQL:
+            resultado = mysql_consulta(bd->conexion, consulta);
+            break;
+
+        case TIPO_POSTGRES:
+            resultado = postgres_consulta(bd->conexion, consulta);
+            break;
+
+        case TIPO_FIREBIRD:
+            resultado = firebird_consulta(bd->conexion, consulta);
+            break;
+
+        default:
+            resultado = NULL;
+            printf("Tipo desconocido: '%c'\n", bd->tipo);
+    }
+
+    return resultado;
+}
+
+json_object* atender_lista_atributos(json_object* datos, struct basedatos_t* bd)
+{
+    const char*  tabla = json_get_string(datos, "tabla");
+    json_object* resultado;
+
+    switch (bd->tipo)
+    {
+        case TIPO_MYSQL:
+            resultado = mysql_columnas(bd->conexion, tabla);
+            break;
+
+        case TIPO_POSTGRES:
+            resultado = postgres_columnas(bd->conexion, tabla);
+            break;
+
+        case TIPO_FIREBIRD:
+            resultado = firebird_columnas(bd->conexion, tabla);
+            break;
+
+        default:
+            resultado = NULL;
+            printf("Tipo desconocido: '%c'\n", bd->tipo);
+    }
+
+    return resultado;
+}
+
+json_object* atender_lista_bds(json_object* datos, struct basedatos_t* bd)
+{
+    json_object* resultado;
+
+    for (int i = 0; i < cantidad_bds; i++)
+    {
+
+    }
+
+    switch (bd->tipo)
+    {
+        case TIPO_MYSQL:
+            resultado = mysql_bases_de_datos(bd->conexion);
+            break;
+
+        case TIPO_POSTGRES:
+            resultado = postgres_bases_de_datos(bd->conexion);
+            break;
+
+        case TIPO_FIREBIRD:
+            resultado = firebird_bases_de_datos(bd->conexion);
+            break;
+
+        default:
+            resultado = NULL;
+            printf("Tipo desconocido: '%c'\n", bd->tipo);
+    }
+
+    return resultado;
+}
+
+json_object* atender_lista_tablas(json_object* datos, struct basedatos_t* bd)
+{
+    json_object* resultado;
+
+    switch (bd->tipo)
+    {
+        case TIPO_MYSQL:
+            resultado = mysql_tablas(bd->conexion);
+            break;
+
+        case TIPO_POSTGRES:
+            resultado = postgres_tablas(bd->conexion);
+            break;
+
+        case TIPO_FIREBIRD:
+            resultado = firebird_tablas(bd->conexion);
+            break;
+
+        default:
+            resultado = NULL;
+            printf("Tipo desconocido: '%c'\n", bd->tipo);
+    }
+
+    return resultado;
+}
+
