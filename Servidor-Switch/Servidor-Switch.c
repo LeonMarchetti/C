@@ -135,29 +135,32 @@ void* atender(void *arg)
 
     printf("[Hilo][%d] Atendiendo socket\n", datos->socket);
 
+    char* error = malloc(256 * sizeof(char));
     while (1)
     {
+        error[0] = 0; // Sin errores
+
         // Recibir datos:
         nb = read(datos->socket, buf_in, BUFFER);
-        buf_in[nb] = '\0';
+        buf_in[nb] = 0;
 
         // Presionar solo enter para terminar la sesión
         if (!strcmp(buf_in, CERRAR))
         {
             break;
         }
-        buf_in[nb-1] = '\0'; // Saco el salto de línea
+        buf_in[nb-1] = 0; // Saco el salto de línea
 
         // Convierto los datos recibidos a JSON:
         json_object* obj_in = json_tokener_parse(buf_in);
+
+        json_object* resultado;
         if (obj_in)
         {
-            // Mostrar en pantalla:
-            printf("[Hilo][%d] %s\n",
+            /*printf("[Hilo][%d] %s\n",
                 datos->socket,
-                json_object_to_json_string_ext(obj_in, 0));
+                json_object_to_json_string_ext(obj_in, 0));*/
 
-            json_object*        resultado;
             const char*         bd       = json_get_string(obj_in, "base_de_datos");
             const char*         comando  = json_get_string(obj_in, "comando");
             const char*         servidor = json_get_string(obj_in, "servidor");
@@ -165,7 +168,7 @@ void* atender(void *arg)
 
             if (!conexion)
             {
-                printf("No se encontró la base de datos buscada\n\tServidor: '%s'\n\tBase de datos: '%s'\n",
+                sprintf(error, "No se encontró la base de datos buscada (Servidor: '%s', Base de datos: '%s')",
                     servidor, bd);
             }
 
@@ -190,25 +193,34 @@ void* atender(void *arg)
                         break;
 
                     default: // Comando inválido
-                        printf("Comando inválido: '%s'\n", comando);
+                        sprintf(error, "Comando inválido: '%s'", comando);
                 }
             }
             else
             {
-                printf("Datos inválidos: '%s'\n", buf_in);
-                // Se recibió un objeto inválido
-                sprintf(buf_out, "Dato inválido");
+                sprintf(error, "No hay comando");
             }
-
-            // Enviar datos:
-            write(datos->socket, buf_out, BUFFER);
         }
         else
         {
-            printf("Datos inválidos: '%s'\n", buf_in);
-            // Se recibió un objeto inválido
-            sprintf(buf_out, "Dato inválido");
+            sprintf(error, "Datos inválidos: '%s'", buf_in);
         }
+
+        // Objeto JSON de salida:
+        json_object* obj_out = json_object_new_object();
+        if (*error)
+        {
+            json_object_object_add(obj_out,
+                "error", json_object_new_string(error));
+        }
+        else
+        {
+            json_object_object_add(obj_out, "resultado", resultado);
+        }
+
+        // Enviar datos:
+        strcpy(buf_out, json_object_to_json_string_ext(obj_out, 0));
+        write(datos->socket, buf_out, BUFFER);
     }
 
     // Cerrar socket:
@@ -216,6 +228,7 @@ void* atender(void *arg)
     printf("[Hilo][%d] Socket cerrado\n", datos->socket);
 
     free(datos);
+    free(error);
     return NULL;
 }
 
@@ -429,32 +442,30 @@ json_object* atender_lista_atributos(json_object* datos, struct basedatos_t* bd)
 
 json_object* atender_lista_bds(json_object* datos, struct basedatos_t* bd)
 {
-    json_object* resultado;
+    const char*  servidor = json_get_string(datos, "servidor");
+    int          cantidad = 0;
+    json_object* arr_bds  = json_object_new_array();
 
     for (int i = 0; i < cantidad_bds; i++)
     {
-
+        if (!strcmp(bases_de_datos[i].nom_servidor, servidor))
+        {
+            json_object_array_add(
+                arr_bds,
+                json_object_new_string(bases_de_datos[i].nom_bd));
+            cantidad++;
+        }
     }
 
-    switch (bd->tipo)
-    {
-        case TIPO_MYSQL:
-            resultado = mysql_bases_de_datos(bd->conexion);
-            break;
+    json_object* arr_columnas = json_object_new_array();
+    json_object_array_add(
+        arr_columnas,
+        json_object_new_string("nombre"));
 
-        case TIPO_POSTGRES:
-            resultado = postgres_bases_de_datos(bd->conexion);
-            break;
-
-        case TIPO_FIREBIRD:
-            resultado = firebird_bases_de_datos(bd->conexion);
-            break;
-
-        default:
-            resultado = NULL;
-            printf("Tipo desconocido: '%c'\n", bd->tipo);
-    }
-
+    json_object* resultado = json_object_new_object();
+    json_object_object_add(resultado, "cantidad", json_object_new_int(cantidad));
+    json_object_object_add(resultado, "columnas", arr_columnas);
+    json_object_object_add(resultado, "filas",    arr_bds);
     return resultado;
 }
 
