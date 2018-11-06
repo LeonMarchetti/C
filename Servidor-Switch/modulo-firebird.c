@@ -42,12 +42,6 @@ json_object* firebird_columnas(void* conexion, const char* tabla)
     return NULL;
 }
 
-json_object* firebird_bases_de_datos(void* conexion)
-{
-    printf("Conexión a Firebird todavía no implementada.\n");
-    return NULL;
-}
-
 //~ json_object* firebird_res_a_json(PGresult* resultado)
 //~ {
     //~ return NULL;

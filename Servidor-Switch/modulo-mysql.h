@@ -54,13 +54,4 @@ json_object* mysql_tablas(void* conexion);
  */
 json_object* mysql_columnas(void* conexion, const char* tabla);
 
-/** Regresa los nombres de todas las bases de datos en el servidor MySQL
- * actual.
- *
- * @param conexion Puntero a una estructura MySQL
- * @returns Objeto JSON, con un entero para la cantidad de filas en el
- * resultado y un arreglo con las filas.
- */
-json_object* mysql_bases_de_datos(void* conexion);
-
 #endif /* MYSQL_H_ */

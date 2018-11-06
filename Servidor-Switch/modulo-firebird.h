@@ -55,13 +55,4 @@ json_object* firebird_tablas(void* conexion);
  */
 json_object* firebird_columnas(void* conexion, const char* tabla);
 
-/** Regresa los nombres de todas las bases de datos en el servidor Firebrid
- * actual.
- *
- * @param conexion Puntero a una estructura Firebird
- * @returns Objeto JSON, con un entero para la cantidad de filas en el
- * resultado y un arreglo con las filas.
- */
-json_object* firebird_bases_de_datos(void* conexion);
-
 #endif /* FIREBIRD_H_ */

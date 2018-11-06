@@ -140,14 +140,6 @@ json_object* postgres_columnas(void* conexion, const char* tabla)
     return resultado;
 }
 
-json_object* postgres_bases_de_datos(void* conexion)
-{
-    const char* consulta = "Select datname "
-                               "From pg_database "
-                               "Where datistemplate = false";
-    return postgres_consulta(conexion, consulta);
-}
-
 json_object* postgres_res_a_json(PGresult* resultado)
 {
     // Longitud de string para cada fila:
