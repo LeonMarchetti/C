@@ -93,7 +93,7 @@ void terminar(int exit_code)
     json_object_put(obj_servidores);
     free(bases_de_datos);
 
-    printf("Terminado");
+    printf("Terminado\n");
 
     exit(exit_code);
 }
@@ -280,6 +280,7 @@ void print_servidores_json()
         printf("Tipo\t%s\n",   json_get_string(obj_servidor, "tipo"));
         printf("Host\t%s\n",   json_get_string(obj_servidor, "host"));
         printf("Puerto\t%d\n", json_get_int   (obj_servidor, "puerto"));
+        printf("Activo:\t%s\n", (json_get_bool(obj_servidor, "activo") ? "Si" : "No"));
 
         int          j = 0;
         json_object* obj_bd;
@@ -314,12 +315,15 @@ void cantidad_basesdedatos()
     json_object* obj_servidor;
     while ((obj_servidor = json_object_array_get_idx(arr_servidores, i++)))
     {
-        json_object* arr_bases;
-        json_object_object_get_ex(obj_servidor, "bases_de_datos", &arr_bases);
-
-        if (arr_bases)
+        if (json_get_bool(obj_servidor, "activo"))
         {
-            cantidad_bds += json_object_array_length(arr_bases);
+            json_object* arr_bases;
+            json_object_object_get_ex(obj_servidor, "bases_de_datos", &arr_bases);
+
+            if (arr_bases)
+            {
+                cantidad_bds += json_object_array_length(arr_bases);
+            }
         }
     }
 
@@ -344,40 +348,44 @@ void conectar_basesdedatos()
     json_object* obj_servidor;
     while ((obj_servidor = json_object_array_get_idx(arr_servidores, i++)))
     {
-        const char* host = json_get_string(obj_servidor, "host");
-        int         port = json_get_int(obj_servidor, "puerto");
+        const char* host   = json_get_string(obj_servidor, "host");
+        int         port   = json_get_int(obj_servidor,    "puerto");
+        int         activo = json_get_bool(obj_servidor,   "activo");
 
-        // Iterar arreglo de bases de datos del servidor en JSON:
-        int          j = 0;
-        json_object* obj_bd;
-        json_object* arr_bases;
-        json_object_object_get_ex(obj_servidor, "bases_de_datos", &arr_bases);
-
-        while ((obj_bd = json_object_array_get_idx(arr_bases, j++)))
+        if (activo)
         {
-            bases_de_datos[b].tipo = json_get_string(obj_servidor, "tipo")[0];
-            strcpy(bases_de_datos[b].nom_servidor, json_get_string(obj_servidor, "nombre"));
-            strcpy(bases_de_datos[b].nom_bd, json_get_string(obj_bd, "base"));
-            const char* usuario     = json_get_string(obj_bd, "usuario");
-            const char* contrasenia = json_get_string(obj_bd, "contraseña");
+            // Iterar arreglo de bases de datos del servidor en JSON:
+            int          j = 0;
+            json_object* obj_bd;
+            json_object* arr_bases;
+            json_object_object_get_ex(obj_servidor, "bases_de_datos", &arr_bases);
 
-            // Realizar conexión a base de datos según tipo:
-            switch (bases_de_datos[b].tipo)
+            while ((obj_bd = json_object_array_get_idx(arr_bases, j++)))
             {
-                case TIPO_MYSQL:
-                    bases_de_datos[b].conexion = mysql_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
-                    break;
-                case TIPO_POSTGRES:
-                    bases_de_datos[b].conexion = postgres_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
-                    break;
-                case TIPO_FIREBIRD:
-                    bases_de_datos[b].conexion = firebird_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
-                    break;
-                default:
-                    bases_de_datos[b].conexion = NULL;
-                    printf("Tipo desconocido: '%c'\n", bases_de_datos[b].tipo);
+                bases_de_datos[b].tipo = json_get_string(obj_servidor, "tipo")[0];
+                strcpy(bases_de_datos[b].nom_servidor, json_get_string(obj_servidor, "nombre"));
+                strcpy(bases_de_datos[b].nom_bd, json_get_string(obj_bd, "base"));
+                const char* usuario     = json_get_string(obj_bd, "usuario");
+                const char* contrasenia = json_get_string(obj_bd, "contraseña");
+
+                // Realizar conexión a base de datos según tipo:
+                switch (bases_de_datos[b].tipo)
+                {
+                    case TIPO_MYSQL:
+                        bases_de_datos[b].conexion = mysql_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
+                        break;
+                    case TIPO_POSTGRES:
+                        bases_de_datos[b].conexion = postgres_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
+                        break;
+                    case TIPO_FIREBIRD:
+                        bases_de_datos[b].conexion = firebird_conectar(host, port, usuario, contrasenia, bases_de_datos[b].nom_bd);
+                        break;
+                    default:
+                        bases_de_datos[b].conexion = NULL;
+                        printf("Tipo desconocido: '%c'\n", bases_de_datos[b].tipo);
+                }
+                b++; // Índice del arreglo global de bases de datos.
             }
-            b++; // Índice del arreglo global de bases de datos.
         }
     }
 }
@@ -531,15 +539,13 @@ json_object* atender_lista_servidores()
 
     while ((obj_servidor = json_object_array_get_idx(arr_serv_in, i++)))
     {
-        // Arreglo JSON con cada valor de la fila:
-        json_object* arreglo_fila = json_object_new_array();
-        json_object_array_add(arreglo_fila, json_object_new_string(json_get_string(obj_servidor, "nombre")));
-        json_object_array_add(arr_serv_out, arreglo_fila);
-
-        /*json_object_array_add(
-            arr_serv_out,
-            json_object_new_string(
-                json_get_string(obj_servidor, "nombre")));*/
+        if (json_get_bool(obj_servidor, "activo"))
+        {
+            // Arreglo JSON con cada valor de la fila:
+            json_object* arreglo_fila = json_object_new_array();
+            json_object_array_add(arreglo_fila, json_object_new_string(json_get_string(obj_servidor, "nombre")));
+            json_object_array_add(arr_serv_out, arreglo_fila);
+        }
     }
 
     json_object* arr_columnas = json_object_new_array();
