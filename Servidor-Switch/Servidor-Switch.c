@@ -8,6 +8,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <signal.h>
+
 #include "json-util.h"
 #include "modulo-firebird.h"
 #include "modulo-mysql.h"
@@ -42,12 +44,14 @@ json_object*        obj_servidores;
 struct basedatos_t* bases_de_datos;
 
 // Funciones ==========================================================
+void  sigint_handler();
 void  terminar();
 void  importar_config();
 void  importar_servidores_json();
 void* atender(void*);
 void  print_servidores_json();
 void  conectar_basesdedatos();
+void  cerrar_conexiones();
 void  cantidad_basesdedatos();
 void  print_arreglo_bds();
 
@@ -62,6 +66,8 @@ struct basedatos_t* buscar_conexion(const char*, const char*);
 
 int main(int argc, char **argv)
 {
+    signal(SIGINT, sigint_handler);
+
     // Importo la ubicación del servidor switch desde un JSON:
     importar_config();
     // Importo la lista de servidores desde un JSON:
@@ -76,10 +82,19 @@ int main(int argc, char **argv)
     terminar(0);
 }
 
+void sigint_handler()
+{
+    terminar(0);
+}
+
 void terminar(int exit_code)
 {
+    cerrar_conexiones();
     json_object_put(obj_servidores);
     free(bases_de_datos);
+
+    printf("Terminado");
+
     exit(exit_code);
 }
 
@@ -109,6 +124,7 @@ void importar_config()
     printf("Configuración importada:\n");
     printf("\tHOST: %s\n", HOST);
     printf("\tPORT: %d\n", PORT);
+    printf("--------------------------------------------------------------------------------");
 
     json_object_put(objeto);
 
@@ -366,6 +382,27 @@ void conectar_basesdedatos()
     }
 }
 
+void  cerrar_conexiones()
+{
+    for (int i = 0; i < cantidad_bds; i++)
+    {
+        switch (bases_de_datos[i].tipo)
+        {
+            case TIPO_MYSQL:
+                mysql_cerrar(bases_de_datos[i].conexion);
+                break;
+
+            case TIPO_POSTGRES:
+                postgres_cerrar(bases_de_datos[i].conexion);
+                break;
+
+            case TIPO_FIREBIRD:
+                firebird_cerrar(bases_de_datos[i].conexion);
+                break;
+        }
+    }
+}
+
 struct basedatos_t* buscar_conexion(const char* servidor, const char* bd)
 {
     if (!servidor)
@@ -494,10 +531,15 @@ json_object* atender_lista_servidores()
 
     while ((obj_servidor = json_object_array_get_idx(arr_serv_in, i++)))
     {
-        json_object_array_add(
+        // Arreglo JSON con cada valor de la fila:
+        json_object* arreglo_fila = json_object_new_array();
+        json_object_array_add(arreglo_fila, json_object_new_string(json_get_string(obj_servidor, "nombre")));
+        json_object_array_add(arr_serv_out, arreglo_fila);
+
+        /*json_object_array_add(
             arr_serv_out,
             json_object_new_string(
-                json_get_string(obj_servidor, "nombre")));
+                json_get_string(obj_servidor, "nombre")));*/
     }
 
     json_object* arr_columnas = json_object_new_array();

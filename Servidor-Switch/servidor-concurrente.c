@@ -122,7 +122,6 @@ void cliente_uniq(const char* host, int puerto, void enviar(char*), void recibir
 
 void servidor(const char* host, int puerto, void* atender)
 {
-
     host = "127.0.0.1";
 
     struct sockaddr_in s_sock;
@@ -139,7 +138,6 @@ void servidor(const char* host, int puerto, void* atender)
     s_sock.sin_family = AF_INET;
     s_sock.sin_port = htons(puerto);
     s_sock.sin_addr.s_addr = inet_addr(host);
-    printf("s_addr = %d\n", s_sock.sin_addr.s_addr);
 
     lensock = sizeof(struct sockaddr_in);
     bind(idsocks, (struct sockaddr*) &s_sock, lensock);

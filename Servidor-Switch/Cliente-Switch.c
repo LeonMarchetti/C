@@ -19,6 +19,7 @@ int PORT;
 // Funciones ==========================================================
 void importar_config();
 void cliente_switch();
+void analizar_resultado(json_object* resultado);
 
 void pedir_dbs(char* mensaje);
 void recibir_dbs(char* mensaje);
@@ -147,6 +148,8 @@ void enviar(char* mensaje)
         case 'b': // Lista de bases de datos
             printf("Servidor> ");
             fgets(nom_servidor, 20, stdin);
+            nom_servidor[18] = 0;
+            printf("Servidor: '%s'\n", nom_servidor);
 
             json_object_object_add(obj_out, "comando",       json_object_new_string("b"));
             json_object_object_add(obj_out, "servidor",      json_object_new_string(nom_servidor));
@@ -202,12 +205,82 @@ void recibir(char* mensaje)
     json_object* obj_in = json_tokener_parse(mensaje);
     if (obj_in)
     {
-
+        json_object* obj_error;
+        json_object_object_get_ex(obj_in, "error", &obj_error);
+        if (obj_error)
+        {
+            fprintf(stderr, "Error: %s\n", json_object_get_string(obj_error));
+        }
+        else
+        {
+            json_object* obj_resultado;
+            json_object_object_get_ex(obj_in, "resultado", &obj_resultado);
+            analizar_resultado(obj_resultado);
+        }
+        free(obj_in);
     }
     else
     {
+        // El mensaje no es un string JSON válido:
         fprintf(stderr, "Datos inválidos:\n%s\n", mensaje);
     }
-    printf("[Recibido]: %s\n", mensaje);
 }
 
+void analizar_resultado(json_object* resultado)
+{
+    if (!resultado)
+    {
+        printf("No se obtuvo resultado...\n");
+        return;
+    }
+
+    printf("Objeto recibido:\n'%s'\n\n", json_object_to_json_string(resultado));
+
+    json_object* objeto_cantidad;
+    json_object_object_get_ex(resultado, "cantidad", &objeto_cantidad);
+    int cantidad = json_object_get_int(objeto_cantidad);
+    if (cantidad <= 0)
+    {
+        printf("Resultado vacío\n");
+        return;
+    }
+
+    json_object* filas;
+    json_object_object_get_ex(resultado, "filas", &filas);
+
+    // Columnas:
+    json_object* arreglo_columnas;
+    json_object_object_get_ex(resultado, "columnas", &arreglo_columnas);
+    int i = 0;
+    json_object* obj_columna;
+    printf("|Fila");
+    while ((obj_columna = json_object_array_get_idx(arreglo_columnas, i++)))
+    {
+        printf("|%-10s", json_object_get_string(obj_columna));
+    }
+    printf("|\n");
+
+    // Iterar filas:
+    int          f = 0;
+    json_object* arr_fila;
+    while((arr_fila = json_object_array_get_idx(filas, f++)))
+    {
+        printf("|%-4d", f);
+        //~ int          c = 0;
+
+        for (int c = 0; c < json_object_array_length(arr_fila); c++)
+        {
+            json_object* obj_celda;
+            obj_celda = json_object_array_get_idx(arr_fila, c);
+            printf("|'%-10s'", json_object_get_string(obj_celda));
+        }
+
+        /*json_object* obj_celda;
+        // vvv segfault vvv
+        while ((obj_celda = json_object_array_get_idx(arr_fila, c++)))
+        {
+            printf("|'%-10s'", json_object_get_string(obj_celda));
+        }*/
+        printf("|\n");
+    }
+}
