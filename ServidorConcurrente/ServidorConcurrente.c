@@ -8,12 +8,18 @@
 #include "servidor.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Constantes =========================================================
 const char ARG_CLIENTE = 'c';
 const char ARG_SERVIDOR = 's';
 
 // Funciones ==========================================================
+void enviar(char*);
+void recibir(char*);
+
+
 int main(int argc, char **argv)
 {
     // Servidor ==================================
@@ -27,7 +33,7 @@ int main(int argc, char **argv)
     // Cliente ===================================
     if (argv[1][0] == ARG_CLIENTE)
     {
-        cliente();
+        cliente(enviar, recibir);
         printf(">>> ");
         getchar();
         return 0;
@@ -37,4 +43,17 @@ int main(int argc, char **argv)
     printf("%c:        Cliente\n", ARG_CLIENTE);
     printf("%c/<Nada>: Servidor\n", ARG_SERVIDOR);
     return 1;
+}
+
+void enviar(char* mensaje)
+{
+    printf("> Ingrese texto: ");
+    fgets(mensaje, 256, stdin);
+    mensaje[strlen(mensaje)] = 0;
+    //~ printf("Para enviar: '%s'\n", mensaje);
+}
+
+void recibir(char* mensaje)
+{
+    printf("[Recibido]: %s\n", mensaje);
 }

@@ -4,6 +4,7 @@
 // Librerías ==========================================================
 #include <arpa/inet.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -12,7 +13,7 @@
 const int TAM_BUFFER_C = 30;
 
 // Funciones ==========================================================
-void cliente()
+void cliente(void enviar(char*), void recibir(char*))
 {
     struct sockaddr_in c_sock;
     int idsocks;
@@ -37,13 +38,13 @@ void cliente()
 
     int nb;
     char buf_in[TAM_BUFFER_C];
-    char buf_out[TAM_BUFFER_C];
+    char* buf_out;
 
     while (1)
     {
-        // Entrada por consola:
-        printf("> Ingrese texto: ");
-        fgets(buf_out, TAM_BUFFER_C, stdin);
+        // Preparar datos de salida:
+        buf_out = malloc(256 * sizeof(char));
+        enviar(buf_out);
 
         // Mandar al servidor:
         write(idsockc, buf_out, strlen(buf_out));
@@ -59,8 +60,9 @@ void cliente()
             break;
         }
 
-        // Mostrar en pantalla:
-        printf("[%d] > %s\n", idsockc, buf_in);
+        recibir(buf_in);
+
+        free(buf_out);
     }
     close(idsockc);
 }

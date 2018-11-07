@@ -2,6 +2,6 @@
 #define CLIENTE_H_
 
 // Funciones ==========================================================
-void cliente();
+void cliente(void enviar(char*), void recibir(char*));
 
 #endif /* CLIENTE_H_ */
