@@ -14,7 +14,7 @@ const int BUFFER = 256;
 const char* CERRAR = "\n";
 
 // Funciones ==========================================================
-void cliente(const char* host, int puerto)
+void cliente(const char* host, int puerto, void enviar(char*), void recibir(char*))
 {
     struct sockaddr_in c_sock;
     int idsocks;
@@ -33,19 +33,21 @@ void cliente(const char* host, int puerto)
     idsocks = connect(idsockc, (struct sockaddr*) &c_sock, lensock);
     if (idsocks == -1)
     {
-        printf("Falló el connect...\n");
+        //~ printf("Falló el connect...\n");
+        fprintf(stderr, "Falló el connect...\n");
+        fprintf(stderr, "\thost: '%s'\n\tpuerto: %d\n", host, puerto);
         return;
     }
 
     int nb;
     char buf_in[BUFFER];
-    char buf_out[BUFFER];
+    char* buf_out;
 
     while (1)
     {
-        // Entrada por consola:
-        printf("> Ingrese texto: ");
-        fgets(buf_out, BUFFER, stdin);
+        // Preparar datos de salida:
+        buf_out = malloc(256 * sizeof(char));
+        enviar(buf_out);
 
         // Mandar al servidor:
         write(idsockc, buf_out, strlen(buf_out));
@@ -53,7 +55,7 @@ void cliente(const char* host, int puerto)
 
         // Recibir del servidor:
         nb = read(idsockc, buf_in, BUFFER);
-        buf_in[nb-1] = '\0';
+        buf_in[nb-1] = 0;
 
         // Presionar solo enter para terminar la sesión
         if (!strcmp(buf_out, CERRAR))
@@ -61,14 +63,68 @@ void cliente(const char* host, int puerto)
             break;
         }
 
-        // Mostrar en pantalla:
-        printf("[%d] > %s\n", idsockc, buf_in);
+        recibir(buf_in);
+
+        free(buf_out);
     }
+    close(idsockc);
+}
+
+void cliente_uniq(const char* host, int puerto, void enviar(char*), void recibir(char*))
+{
+    struct sockaddr_in c_sock;
+    int idsocks;
+    int idsockc;
+    int lensock;
+
+    idsockc = socket(AF_INET, SOCK_STREAM, 0);
+
+    c_sock.sin_family = AF_INET;
+    c_sock.sin_port = htons(puerto);
+    c_sock.sin_addr.s_addr = inet_addr(host);
+
+    lensock = sizeof(c_sock);
+
+    // Conectarse con el servidor:
+    idsocks = connect(idsockc, (struct sockaddr*) &c_sock, lensock);
+    if (idsocks == -1)
+    {
+        //~ printf("Falló el connect...\n");
+        fprintf(stderr, "Falló el connect...\n");
+        fprintf(stderr, "\thost: '%s'\n\tpuerto: %d\n", host, puerto);
+        return;
+    }
+
+    int   nb;
+    char  buf_in[BUFFER];
+    char* buf_out;
+
+    // Preparar datos de salida:
+    buf_out = malloc(256 * sizeof(char));
+    enviar(buf_out);
+
+    // Enviar al servidor:
+    write(idsockc, buf_out, strlen(buf_out));
+
+    // Recibir del servidor:
+    nb = read(idsockc, buf_in, BUFFER);
+    buf_in[nb-1] = 0;
+
+    recibir(buf_in);
+
+    // Enviar señal de terminado para cerrar conexión en el servidor:
+    write(idsockc, CERRAR, strlen(buf_out));
+
+    free(buf_out);
+
     close(idsockc);
 }
 
 void servidor(const char* host, int puerto, void* atender)
 {
+
+    host = "127.0.0.1";
+
     struct sockaddr_in s_sock;
     struct sockaddr_in c_sock;
     int idsocks;
@@ -83,6 +139,7 @@ void servidor(const char* host, int puerto, void* atender)
     s_sock.sin_family = AF_INET;
     s_sock.sin_port = htons(puerto);
     s_sock.sin_addr.s_addr = inet_addr(host);
+    printf("s_addr = %d\n", s_sock.sin_addr.s_addr);
 
     lensock = sizeof(struct sockaddr_in);
     bind(idsocks, (struct sockaddr*) &s_sock, lensock);
@@ -93,7 +150,7 @@ void servidor(const char* host, int puerto, void* atender)
 
     while (1)
     {
-        printf("[Main]    Esperando conexión...\n");
+        printf("[Main]    Esperando conexión en %s:%d...\n", host, puerto);
 
         // Acepto una conexión entrante:
         idsockc = accept(idsocks, (struct sockaddr*) &c_sock, &lensock);

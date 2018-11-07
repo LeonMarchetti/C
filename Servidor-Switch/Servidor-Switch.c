@@ -54,6 +54,7 @@ void  print_arreglo_bds();
 json_object* atender_consulta(json_object* datos, struct basedatos_t* bd);
 json_object* atender_lista_atributos(json_object* datos, struct basedatos_t* bd);
 json_object* atender_lista_bds(json_object* datos, struct basedatos_t* bd);
+json_object* atender_lista_servidores();
 json_object* atender_lista_tablas(json_object* datos, struct basedatos_t* bd);
 
 struct basedatos_t* buscar_conexion(const char*, const char*);
@@ -65,12 +66,12 @@ int main(int argc, char **argv)
     importar_config();
     // Importo la lista de servidores desde un JSON:
     importar_servidores_json();
-    //~ print_servidores_json();
+    print_servidores_json();
     cantidad_basesdedatos();
     conectar_basesdedatos();
     print_arreglo_bds();
 
-    //~ servidor(HOST, PORT, atender);
+    servidor(HOST, PORT, atender);
 
     terminar(0);
 }
@@ -105,9 +106,12 @@ void importar_config()
         terminar(1);
     }
 
-    printf("Configuración importada\n");
+    printf("Configuración importada:\n");
+    printf("\tHOST: %s\n", HOST);
+    printf("\tPORT: %d\n", PORT);
 
     json_object_put(objeto);
+
 }
 
 void importar_servidores_json()
@@ -149,7 +153,8 @@ void* atender(void *arg)
         {
             break;
         }
-        buf_in[nb-1] = 0; // Saco el salto de línea
+        //~ buf_in[nb-1] = 0; // Saco el salto de línea
+        buf_in[nb] = 0; // Saco el salto de línea
 
         // Convierto los datos recibidos a JSON:
         json_object* obj_in = json_tokener_parse(buf_in);
@@ -166,44 +171,52 @@ void* atender(void *arg)
             const char*         servidor = json_get_string(obj_in, "servidor");
             struct basedatos_t* conexion = buscar_conexion(servidor, bd);
 
-            if (!conexion)
+            if (comando[0] == 's')
             {
-                sprintf(error, "No se encontró la base de datos buscada (Servidor: '%s', Base de datos: '%s')",
-                    servidor, bd);
-            }
-
-            if (comando)
-            {
-                switch (comando[0])
-                {
-                    case 'a': // Listar atributos de tabla
-                        resultado = atender_lista_atributos(obj_in, conexion);
-                        break;
-
-                    case 'b': // Listar bases de datos
-                        resultado = atender_lista_bds(obj_in, conexion);
-                        break;
-
-                    case 'q': // Consulta
-                        resultado = atender_consulta(obj_in, conexion);
-                        break;
-
-                    case 't': // Listar tablas de base de datos
-                        resultado = atender_lista_tablas(obj_in, conexion);
-                        break;
-
-                    default: // Comando inválido
-                        sprintf(error, "Comando inválido: '%s'", comando);
-                }
+                resultado = atender_lista_servidores();
             }
             else
             {
-                sprintf(error, "No hay comando");
+                if (!conexion)
+                {
+                    sprintf(error, "No se encontró la base de datos buscada (Servidor: '%s', Base de datos: '%s')",
+                        servidor, bd);
+                }
+
+                if (comando)
+                {
+                    switch (comando[0])
+                    {
+                        case 'a': // Listar atributos de tabla
+                            resultado = atender_lista_atributos(obj_in, conexion);
+                            break;
+
+                        case 'b': // Listar bases de datos
+                            resultado = atender_lista_bds(obj_in, conexion);
+                            break;
+
+                        case 'q': // Consulta
+                            resultado = atender_consulta(obj_in, conexion);
+                            break;
+
+                        case 't': // Listar tablas de base de datos
+                            resultado = atender_lista_tablas(obj_in, conexion);
+                            break;
+
+                        default: // Comando inválido
+                            sprintf(error, "Comando inválido: '%s'", comando);
+                    }
+                }
+                else
+                {
+                    sprintf(error, "No hay comando");
+                }
             }
         }
         else
         {
             sprintf(error, "Datos inválidos: '%s'", buf_in);
+            //~ printf("buf_in = %s\n", buf_in);
         }
 
         // Objeto JSON de salida:
@@ -384,6 +397,7 @@ void print_arreglo_bds()
             bases_de_datos[i].nom_bd,
             bases_de_datos[i].conexion);
     }
+    printf("--------------------------------------------------------------------------------");
 }
 
 json_object* atender_consulta(json_object* datos, struct basedatos_t* bd)
@@ -466,6 +480,35 @@ json_object* atender_lista_bds(json_object* datos, struct basedatos_t* bd)
     json_object_object_add(resultado, "cantidad", json_object_new_int(cantidad));
     json_object_object_add(resultado, "columnas", arr_columnas);
     json_object_object_add(resultado, "filas",    arr_bds);
+    return resultado;
+}
+
+json_object* atender_lista_servidores()
+{
+    int          i            = 0;
+    json_object* arr_serv_in;
+    json_object* arr_serv_out = json_object_new_array();
+    json_object* obj_servidor;
+
+    json_object_object_get_ex(obj_servidores, "servidores", &arr_serv_in);
+
+    while ((obj_servidor = json_object_array_get_idx(arr_serv_in, i++)))
+    {
+        json_object_array_add(
+            arr_serv_out,
+            json_object_new_string(
+                json_get_string(obj_servidor, "nombre")));
+    }
+
+    json_object* arr_columnas = json_object_new_array();
+    json_object_array_add(
+        arr_columnas,
+        json_object_new_string("servidor"));
+
+    json_object* resultado = json_object_new_object();
+    json_object_object_add(resultado, "cantidad", json_object_new_int(i));
+    json_object_object_add(resultado, "columnas", arr_columnas);
+    json_object_object_add(resultado, "filas",    arr_serv_out);
     return resultado;
 }
 

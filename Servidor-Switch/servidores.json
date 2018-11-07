@@ -22,7 +22,7 @@
         {   // Postgres en MV Debian 9
             "nombre": "MV_Postgres",
             "tipo": "p",
-            "host": "192.168.1.38",
+            "host": "192.168.1.35",
             "puerto": 5432,
             "bases_de_datos": [
                 {

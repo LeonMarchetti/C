@@ -16,6 +16,11 @@ TARGET=${RUN_DIR}${PRJ_NOM}.exe
 DEBUG_TARGET=${DEBUG_DIR}${PRJ_NOM}.exe
 OBJ_SRC=${SRV_OBJ} ${JSN_OBJ} ${MySQL_OBJ} ${PG_OBJ} ${FB_OBJ}
 
+# Cliente
+CLI=Cliente-Switch
+CLI_SRC=${CLI}.c
+CLI_TARGET=${RUN_DIR}${CLI}.exe
+
 # Servidor
 SRV=servidor-concurrente
 SRV_SRC=${SRV}.c
@@ -42,7 +47,7 @@ FB_SRC=${FB}.c
 FB_OBJ=${OBJ_DIR}${FB}.o
 
 
-all: ${TARGET}
+all: ${TARGET} ${CLI_TARGET}
 
 debug: ${DEBUG_TARGET}
 
@@ -66,6 +71,9 @@ ${TARGET}: ${SOURCE} ${OBJ_SRC}
 
 ${DEBUG_TARGET}: ${SOURCE} ${OBJ_SRC}
 	${CC} ${CFLAGS} ${DEBUG} ${INCLUDES} -o ${DEBUG_TARGET} ${SOURCE} ${OBJ_SRC} ${LFLAGS} ${LIBS}
+
+${CLI_TARGET}: ${CLI_SRC} ${OBJ_SRC}
+	${CC} ${CFLAGS} ${INCLUDES} -o ${CLI_TARGET} ${CLI_SRC} ${OBJ_SRC} ${LFLAGS} ${LIBS}
 
 clean:
 	${RM} ./object/*.o ./run/*.exe
