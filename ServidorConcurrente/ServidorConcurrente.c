@@ -34,6 +34,8 @@ int main(int argc, char **argv)
     if (argv[1][0] == ARG_CLIENTE)
     {
         cliente(enviar, recibir);
+        //~ cliente_uniq(enviar, recibir);
+
         printf(">>> ");
         getchar();
         return 0;
