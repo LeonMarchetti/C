@@ -169,7 +169,6 @@ void* atender(void *arg)
         {
             break;
         }
-        //~ buf_in[nb-1] = 0; // Saco el salto de línea
         buf_in[nb] = 0; // Saco el salto de línea
 
         // Convierto los datos recibidos a JSON:
@@ -178,10 +177,6 @@ void* atender(void *arg)
         json_object* resultado;
         if (obj_in)
         {
-            /*printf("[Hilo][%d] %s\n",
-                datos->socket,
-                json_object_to_json_string_ext(obj_in, 0));*/
-
             const char*         bd       = json_get_string(obj_in, "base_de_datos");
             const char*         comando  = json_get_string(obj_in, "comando");
             const char*         servidor = json_get_string(obj_in, "servidor");
@@ -232,7 +227,6 @@ void* atender(void *arg)
         else
         {
             sprintf(error, "Datos inválidos: '%s'", buf_in);
-            //~ printf("buf_in = %s\n", buf_in);
         }
 
         // Objeto JSON de salida:
@@ -507,11 +501,14 @@ json_object* atender_lista_bds(json_object* datos, struct basedatos_t* bd)
 
     for (int i = 0; i < cantidad_bds; i++)
     {
+
         if (!strcmp(bases_de_datos[i].nom_servidor, servidor))
         {
+            json_object* arr_fila = json_object_new_array();
             json_object_array_add(
-                arr_bds,
+                arr_fila,
                 json_object_new_string(bases_de_datos[i].nom_bd));
+            json_object_array_add(arr_bds, arr_fila);
             cantidad++;
         }
     }
