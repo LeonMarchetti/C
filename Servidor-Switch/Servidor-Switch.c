@@ -49,10 +49,11 @@ void  terminar();
 void  importar_config();
 void  importar_servidores_json();
 void* atender(void*);
-void  print_servidores_json();
 void  conectar_basesdedatos();
 void  cerrar_conexiones();
 void  cantidad_basesdedatos();
+
+void  print_servidores_json();
 void  print_arreglo_bds();
 
 json_object* atender_consulta(json_object* datos, struct basedatos_t* bd);
@@ -93,7 +94,7 @@ void terminar(int exit_code)
     json_object_put(obj_servidores);
     free(bases_de_datos);
 
-    printf("Terminado\n");
+    printf("Terminado...\n");
 
     exit(exit_code);
 }
@@ -293,6 +294,19 @@ void print_servidores_json()
     printf("--------------------------------------------------------------------------------");
 }
 
+void print_arreglo_bds()
+{
+    for (int i = 0; i < cantidad_bds; i++)
+    {
+        printf("%c\t%15s\t%15s\t%s\n",
+            bases_de_datos[i].tipo,
+            bases_de_datos[i].nom_servidor,
+            bases_de_datos[i].nom_bd,
+            (bases_de_datos[i].conexion) ? "Conectado" : "");
+    }
+    printf("--------------------------------------------------------------------------------");
+}
+
 void cantidad_basesdedatos()
 {
     cantidad_bds = 0;
@@ -424,19 +438,6 @@ struct basedatos_t* buscar_conexion(const char* servidor, const char* bd)
         }
     }
     return NULL;
-}
-
-void print_arreglo_bds()
-{
-    for (int i = 0; i < cantidad_bds; i++)
-    {
-        printf("%c\t%15s\t%15s\t%p\n",
-            bases_de_datos[i].tipo,
-            bases_de_datos[i].nom_servidor,
-            bases_de_datos[i].nom_bd,
-            bases_de_datos[i].conexion);
-    }
-    printf("--------------------------------------------------------------------------------");
 }
 
 json_object* atender_consulta(json_object* datos, struct basedatos_t* bd)
