@@ -2,9 +2,9 @@ CC=gcc
 CFLAGS=-Wall -pthread
 DEBUG=-g
 
-DEBUG_DIR=./debug/
-OBJ_DIR=./object/
-RUN_DIR=./run/
+DEBUG_DIR=debug/
+OBJ_DIR=object/
+RUN_DIR=run/
 
 PRJ_NOM=SinTitulo
 SOURCE=${PRJ_NOM}.c
@@ -16,9 +16,18 @@ HEADER=header
 HEADER_SOURCE=${HEADER}.c
 HEADER_OBJECT=${OBJ_DIR}${HEADER}.o
 
-all: ${TARGET}
+all: ${RUN_DIR} ${OBJ_DIR} ${TARGET}
 
-debug: ${DEBUG_TARGET}
+debug: ${DEBUG_DIR} ${OBJ_DIR} ${DEBUG_TARGET}
+
+${DEBUG_DIR}:
+	mkdir ${DEBUG_DIR}
+
+${OBJ_DIR}:
+	mkdir ${OBJ_DIR}
+
+${RUN_DIR}:
+	mkdir ${RUN_DIR}
 
 ${HEADER_OBJECT}: ${HEADER_SOURCE}
 	${CC} ${CFLAGS} -c ${HEADER_SOURCE} -o ${HEADER_OBJECT}

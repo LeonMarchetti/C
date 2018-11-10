@@ -6,9 +6,9 @@ INCLUDES=-I /usr/include/json-c -I /usr/include/mysql
 LFLAGS=-L /usr/lib
 LIBS=-l json-c -l mysqlclient
 
-DEBUG_DIR=./debug/
-OBJ_DIR=./object/
-RUN_DIR=./run/
+DEBUG_DIR=debug/
+OBJ_DIR=object/
+RUN_DIR=run/
 
 PRJ_NOM=PruebaMySQL
 SOURCE=${PRJ_NOM}.c
@@ -20,9 +20,19 @@ JSON-UTIL=json-util
 JSON-UTIL_SRC=${JSON-UTIL}.c
 JSON-UTIL_OBJ=${OBJ_DIR}${JSON-UTIL}.o
 
-all: ${TARGET}
+all: ${RUN_DIR} ${OBJ_DIR} ${TARGET}
 
-debug: ${DEBUG_TARGET}
+debug: ${DEBUG_DIR} ${OBJ_DIR} ${DEBUG_TARGET}
+
+${DEBUG_DIR}:
+	mkdir ${DEBUG_DIR}
+
+${OBJ_DIR}:
+	mkdir ${OBJ_DIR}
+
+${RUN_DIR}:
+	mkdir ${RUN_DIR}
+
 
 ${JSON-UTIL_OBJ}: ${JSON-UTIL_SRC}
 	${CC} ${CFLAGS} ${INCLUDES} -o ${JSON-UTIL_OBJ} -c ${JSON-UTIL_SRC} ${LFLAGS} ${LIBS}
