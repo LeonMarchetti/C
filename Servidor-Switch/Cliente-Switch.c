@@ -112,6 +112,13 @@ void recibir_dbs(char* mensaje)
 
 void enviar(char* mensaje)
 {
+    printf("\n");
+    printf("Comando\t\t\t\t|Datos\n");
+    printf("a\tLista de atributos\t|Servidor, Base de datos, Tabla\n");
+    printf("b\tLista de bases de datos\t|Servidor\n");
+    printf("q\tConsulta\t\t|Servidor, Base de datos, Consulta\n");
+    printf("s\tLista de servidores\t|\n");
+    printf("t\tLista de tablas\t\t|Servidor, Base de datos\n");
     printf("Ingresar comando (a,b,q,s,t) > ");
 
     char* in_comando = malloc(10 * sizeof(char));

@@ -6,9 +6,12 @@ INCLUDES=-I /usr/include/json-c -I /usr/include/mysql -I /usr/include/postgresql
 LFLAGS=-L /usr/lib
 LIBS=-l json-c -l mysqlclient -l pq
 
-DEBUG_DIR=./debug/
-OBJ_DIR=./object/
-RUN_DIR=./run/
+#~ DEBUG_DIR=./debug/
+#~ OBJ_DIR=./object/
+#~ RUN_DIR=./run/
+DEBUG_DIR=debug/
+OBJ_DIR=object/
+RUN_DIR=run/
 
 PRJ_NOM=Servidor-Switch
 SOURCE=${PRJ_NOM}.c
@@ -48,9 +51,18 @@ FB_SRC=${FB}.c
 FB_OBJ=${OBJ_DIR}${FB}.o
 
 
-all: ${TARGET} ${CLI_TARGET}
+all: ${RUN_DIR} ${OBJ_DIR} ${TARGET} ${CLI_TARGET}
 
-debug: ${DEBUG_TARGET} ${CLI_DEBUG}
+debug: ${DEBUG_DIR} ${OBJ_DIR} ${DEBUG_TARGET} ${CLI_DEBUG}
+
+${DEBUG_DIR}:
+	mkdir ${DEBUG_DIR}
+
+${OBJ_DIR}:
+	mkdir ${OBJ_DIR}
+
+${RUN_DIR}:
+	mkdir ${RUN_DIR}
 
 ${SRV_OBJ}: ${SRV_SRC}
 	${CC} ${CFLAGS} ${INCLUDES} -o ${SRV_OBJ} -c ${SRV_SRC} ${LFLAGS} ${LIBS}
@@ -80,4 +92,4 @@ ${CLI_DEBUG}: ${CLI_SRC} ${OBJ_SRC}
 	${CC} ${CFLAGS} ${DEBUG} ${INCLUDES} -o ${CLI_DEBUG} ${CLI_SRC} ${OBJ_SRC} ${LFLAGS} ${LIBS}
 
 clean:
-	${RM} ./object/*.o ./run/*.exe
+	${RM} ${OBJ_DIR}*.* ${RUN_DIR}*.* ${DEBUG_DIR}*.*

@@ -3,9 +3,9 @@
     "servidores" : [
         {   // Postgres en MV Debian 9
             "nombre": "MV_Postgres",
-            "activo": false,
+            "activo": true,
             "tipo": "p",
-            "host": "10.100.9.53",
+            "host": "169.254.10.103",
             "puerto": 5432,
             "bases_de_datos": [
                 {

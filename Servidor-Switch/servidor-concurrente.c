@@ -3,6 +3,7 @@
 
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +14,17 @@
 const int BUFFER = 256;
 const char* CERRAR = "\n";
 
+// Globales ===========================================================
+int idsock;
+
 // Funciones ==========================================================
+void cerrar_socket()
+{
+    close(idsock);
+    printf("Socket cerrado...\n");
+}
+
+
 void cliente(const char* host, int puerto, void enviar(char*), void recibir(char*))
 {
     struct sockaddr_in c_sock;
@@ -22,6 +33,8 @@ void cliente(const char* host, int puerto, void enviar(char*), void recibir(char
     int lensock;
 
     idsockc = socket(AF_INET, SOCK_STREAM, 0);
+    //~ idsock = idsockc;
+    //~ signal(SIGINT, cerrar_socket);
 
     c_sock.sin_family = AF_INET;
     c_sock.sin_port = htons(puerto);
