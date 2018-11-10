@@ -1,0 +1,9 @@
+{
+    "host":       "localhost",
+    "puerto":     3050,
+    "base":       "BD2-TP1",
+    "usuario":    "SYSDBA",
+    "contraseña": "masterkey",
+
+    "sql":        "Select * From Producto"
+}
