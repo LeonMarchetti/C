@@ -37,7 +37,7 @@ struct basedatos_t
 };
 
 // Globales ===========================================================
-const char*         HOST;
+char*               HOST;
 int                 PORT;
 int                 cantidad_bds;
 json_object*        obj_servidores;
@@ -78,6 +78,7 @@ int main(int argc, char **argv)
     conectar_basesdedatos();
     print_arreglo_bds();
 
+    // Iniciar servidor:
     servidor(HOST, PORT, atender);
 
     terminar(0);
@@ -93,6 +94,7 @@ void terminar(int exit_code)
     cerrar_conexiones();
     json_object_put(obj_servidores);
     free(bases_de_datos);
+    free(HOST);
 
     printf("Terminado...\n");
 
@@ -108,7 +110,8 @@ void importar_config()
         terminar(1);
     }
 
-    HOST = json_get_string(objeto, KEY_HOST);
+    HOST = malloc(15 * sizeof(char));
+    strcpy(HOST, json_get_string(objeto, KEY_HOST));
     if (!HOST)
     {
         printf("No se pudo leer el host (Clave: %s)...\n", KEY_HOST);
@@ -239,10 +242,12 @@ void* atender(void *arg)
         }
         else
         {
+            printf("[Hilo][%d] Filas enviadas: %d\n", datos->socket, json_get_int(resultado, "cantidad"));
             json_object_object_add(obj_out, "resultado", resultado);
         }
 
         // Enviar datos:
+        //~ printf("\nSalida: %s\n\n", json_object_to_json_string_ext(obj_out, 0));
         strcpy(buf_out, json_object_to_json_string_ext(obj_out, 0));
         write(datos->socket, buf_out, BUFFER);
     }
@@ -529,6 +534,7 @@ json_object* atender_lista_bds(json_object* datos, struct basedatos_t* bd)
 json_object* atender_lista_servidores()
 {
     int          i            = 0;
+    int          cantidad     = 0; // Cantidad de bases de datos activas
     json_object* arr_serv_in;
     json_object* arr_serv_out = json_object_new_array();
     json_object* obj_servidor;
@@ -543,6 +549,7 @@ json_object* atender_lista_servidores()
             json_object* arreglo_fila = json_object_new_array();
             json_object_array_add(arreglo_fila, json_object_new_string(json_get_string(obj_servidor, "nombre")));
             json_object_array_add(arr_serv_out, arreglo_fila);
+            cantidad++;
         }
     }
 
@@ -552,7 +559,7 @@ json_object* atender_lista_servidores()
         json_object_new_string("servidor"));
 
     json_object* resultado = json_object_new_object();
-    json_object_object_add(resultado, "cantidad", json_object_new_int(i));
+    json_object_object_add(resultado, "cantidad", json_object_new_int(cantidad));
     json_object_object_add(resultado, "columnas", arr_columnas);
     json_object_object_add(resultado, "filas",    arr_serv_out);
     return resultado;

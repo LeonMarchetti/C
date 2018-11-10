@@ -38,6 +38,8 @@ int main(int argc, char **argv)
 
     // Arranco el cliente para empezar el programa:
     cliente(HOST, PORT, enviar, recibir);
+
+    printf("Cliente switch terminado...\n");
 }
 
 void importar_config()
@@ -113,17 +115,19 @@ void recibir_dbs(char* mensaje)
 void enviar(char* mensaje)
 {
     printf("\n");
-    printf("Comando\t\t\t\t|Datos\n");
-    printf("a\tLista de atributos\t|Servidor, Base de datos, Tabla\n");
-    printf("b\tLista de bases de datos\t|Servidor\n");
-    printf("q\tConsulta\t\t|Servidor, Base de datos, Consulta\n");
+    printf("Comandos\t\t\t\t| Datos\n");
+    printf("a\tLista de atributos\t| Servidor, Base de datos, Tabla\n");
+    printf("b\tLista de bases de datos\t| Servidor\n");
+    printf("q\tConsulta\t\t| Servidor, Base de datos, Consulta\n");
     printf("s\tLista de servidores\t|\n");
-    printf("t\tLista de tablas\t\t|Servidor, Base de datos\n");
-    printf("Ingresar comando (a,b,q,s,t) > ");
+    printf("t\tLista de tablas\t\t| Servidor, Base de datos\n");
+    printf("x\tSalir\n");
+    printf("Ingresar comando (a,b,q,s,t,x) > ");
 
     char* in_comando = malloc(10 * sizeof(char));
     fgets(in_comando, 10, stdin);
 
+    int          salir        = 0;
     char*        nom_bd       = malloc(20 * sizeof(char));
     char*        nom_servidor = malloc(20 * sizeof(char));
     char*        nom_tabla    = malloc(20 * sizeof(char));
@@ -193,17 +197,28 @@ void enviar(char* mensaje)
             json_object_object_add(obj_out, "base_de_datos", json_object_new_string(nom_bd));
             break;
 
+        case 'x':
+            salir = 1;
+            break;
+
         case 's': // Lista de servidores
         default:
             json_object_object_add(obj_out, "comando",       json_object_new_string("s"));
             break;
     }
 
-    printf("mensaje: %s\n", json_object_to_json_string(obj_out));
-
-    sprintf(mensaje, json_object_to_json_string_ext(obj_out, 0));
-    mensaje[strlen(mensaje)] = 0;
-
+    if (salir)
+    {
+        // Enviar señal de terminado:
+        sprintf(mensaje, CERRAR);
+    }
+    else
+    {
+        // Convertir objeto JSON en string y colocarlo en el mensaje de salida:
+        //~ printf("mensaje: %s\n", json_object_to_json_string(obj_out));
+        sprintf(mensaje, json_object_to_json_string_ext(obj_out, 0));
+        mensaje[strlen(mensaje)] = 0;
+    }
     free(in_comando);
     free(nom_bd);
     free(nom_servidor);
@@ -233,7 +248,7 @@ void recibir(char* mensaje)
     else
     {
         // El mensaje no es un string JSON válido:
-        fprintf(stderr, "Datos inválidos:\n%s\n", mensaje);
+        fprintf(stderr, "Datos inválidos:\n'%s'\n", mensaje);
     }
 }
 
@@ -244,8 +259,6 @@ void analizar_resultado(json_object* resultado)
         printf("No se obtuvo resultado...\n");
         return;
     }
-
-    printf("Objeto recibido:\n'%s'\n\n", json_object_to_json_string(resultado));
 
     int cantidad = json_get_int(resultado, "cantidad");
     if (cantidad <= 0)

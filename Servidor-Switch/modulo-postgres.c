@@ -25,6 +25,7 @@ void* postgres_conectar(const char* host, int puerto, const char* usuario,
         PQfinish(conexion);
         return NULL;
     }
+
     return conexion;
 }
 
@@ -35,6 +36,8 @@ void postgres_cerrar(void* conexion)
 
 json_object* postgres_consulta(void* conexion, const char* consulta)
 {
+    //
+
     PGresult* resultado = PQexec((PGconn* ) conexion, consulta);
     if (resultado == NULL ||
         PQresultStatus(resultado) != PGRES_TUPLES_OK)
@@ -47,7 +50,7 @@ json_object* postgres_consulta(void* conexion, const char* consulta)
 
 json_object* postgres_tablas(void* conexion)
 {
-    const char* select_tablas = "Select schemaname, tablename From pg_catalog.pg_tables Where schemaname != 'pg_catalog' And schemaname != 'information_schema';";
+    const char* select_tablas = "Select tablename From pg_catalog.pg_tables Where schemaname != 'pg_catalog' And schemaname != 'information_schema';";
 
     PGresult* resultado = PQexec((PGconn* ) conexion, select_tablas);
     if (resultado == NULL ||
@@ -69,15 +72,9 @@ json_object* postgres_tablas(void* conexion)
         // Arreglo JSON con cada valor de la fila:
         json_object* arreglo_fila = json_object_new_array();
 
-        char nombre_tabla[64];
-        // Armar nombre de la tabla:
-        sprintf(nombre_tabla, "%s.\"%s\"",
-                PQgetvalue(resultado, f, 0),
-                PQgetvalue(resultado, f, 1));
-
         json_object_array_add(
             arreglo_fila,
-            json_object_new_string(nombre_tabla)
+            json_object_new_string(PQgetvalue(resultado, f, 0))
         );
         json_object_array_add(arreglo, arreglo_fila);
     }
@@ -95,48 +92,16 @@ json_object* postgres_tablas(void* conexion)
 
 json_object* postgres_columnas(void* conexion, const char* tabla)
 {
-    /* Para realizar una consulta en postgres, tengo que referirme a las tablas
-     * como: esquema."tabla", por ej.: public."Cliente", por lo tanto tengo que
-     * separar el esquema y la tabla para hacer las consultas de metadatos.
-     */
-
-    // String temporal para strtok:
-    char tmp_tabla[strlen(tabla)];
-    strcpy(tmp_tabla, tabla);
-
-    char* schema = malloc(strlen(tabla)); // Esquema de la tabla
-    char* table  = malloc(strlen(tabla)); // Nombre de la tabla
-
-    // Separo el esquema y la tabla según el punto:
-    int   i      = 0;
-    char* token  = strtok(tmp_tabla, ".");
-    while (token != NULL)
-    {
-        switch (i++)
-        {
-            case 0: strcpy(schema, token); break;
-            case 1: strcpy(table, token);
-        }
-        token = strtok(NULL, ".");
-    }
-
-    // Reemplazo las comillas dobles por simples:
-    table[0] = '\'';
-    table[strlen(table)-1] = '\'';
-
-    // Hago la consulta:
-    const char* plantilla_sql = "Select * "
+    // Creo la consulta:
+    const char* plantilla_sql = "Select column_name As name, data_type As type, column_default As default, is_nullable As null "
                                     "From information_schema.columns "
-                                    "Where table_schema = '%s' And table_name = %s";
-    char*       consulta_2    = malloc(strlen(schema) + strlen(table) + strlen(plantilla_sql));
-    sprintf(consulta_2, plantilla_sql, schema, table);
+                                    "Where table_name = '%s'";
+    char*       consulta      = malloc(strlen(tabla) + strlen(plantilla_sql));
+    sprintf(consulta, plantilla_sql, tabla);
 
-    json_object* resultado = postgres_consulta(conexion, consulta_2);
+    json_object* resultado = postgres_consulta(conexion, consulta);
 
-    free(schema);
-    free(table);
-    free(consulta_2);
-
+    free(consulta);
     return resultado;
 }
 

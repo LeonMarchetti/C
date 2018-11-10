@@ -3,7 +3,6 @@
 
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,20 +10,10 @@
 #include <unistd.h>
 
 // Constantes =========================================================
-const int BUFFER = 256;
+const int BUFFER = 512;
 const char* CERRAR = "\n";
 
-// Globales ===========================================================
-int idsock;
-
 // Funciones ==========================================================
-void cerrar_socket()
-{
-    close(idsock);
-    printf("Socket cerrado...\n");
-}
-
-
 void cliente(const char* host, int puerto, void enviar(char*), void recibir(char*))
 {
     struct sockaddr_in c_sock;
@@ -33,8 +22,6 @@ void cliente(const char* host, int puerto, void enviar(char*), void recibir(char
     int lensock;
 
     idsockc = socket(AF_INET, SOCK_STREAM, 0);
-    //~ idsock = idsockc;
-    //~ signal(SIGINT, cerrar_socket);
 
     c_sock.sin_family = AF_INET;
     c_sock.sin_port = htons(puerto);
@@ -59,7 +46,7 @@ void cliente(const char* host, int puerto, void enviar(char*), void recibir(char
     while (1)
     {
         // Preparar datos de salida:
-        buf_out = malloc(256 * sizeof(char));
+        buf_out = malloc(BUFFER * sizeof(char));
         enviar(buf_out);
 
         // Mandar al servidor:
@@ -86,9 +73,9 @@ void cliente(const char* host, int puerto, void enviar(char*), void recibir(char
 void cliente_uniq(const char* host, int puerto, void enviar(char*), void recibir(char*))
 {
     struct sockaddr_in c_sock;
-    int idsocks;
-    int idsockc;
-    int lensock;
+    int                idsocks;
+    int                idsockc;
+    socklen_t          lensock;
 
     idsockc = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -113,7 +100,7 @@ void cliente_uniq(const char* host, int puerto, void enviar(char*), void recibir
     char* buf_out;
 
     // Preparar datos de salida:
-    buf_out = malloc(256 * sizeof(char));
+    buf_out = malloc(BUFFER * sizeof(char));
     enviar(buf_out);
 
     // Enviar al servidor:
@@ -135,16 +122,12 @@ void cliente_uniq(const char* host, int puerto, void enviar(char*), void recibir
 
 void servidor(const char* host, int puerto, void* atender)
 {
-    host = "127.0.0.1";
-
     struct sockaddr_in s_sock;
     struct sockaddr_in c_sock;
-    int idsocks;
-    int idsockc;
-    int lensock;
-
-    // Estructura con los datos a pasar al hilo
-    struct datos_t *datos;
+    int                idsocks;
+    int                idsockc;
+    socklen_t          lensock;
+    struct datos_t*    datos; // Estructura con los datos a pasar al hilo
 
     idsocks = socket(AF_INET, SOCK_STREAM, 0);
 
