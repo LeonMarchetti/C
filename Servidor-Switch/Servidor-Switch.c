@@ -275,25 +275,27 @@ void print_servidores_json()
     json_object* obj_servidor;
     while ((obj_servidor = json_object_array_get_idx(arr_servidores, i++)))
     {
-        printf("--------------------------------------------------------------------------------");
-        printf("Nombre\t%s\n", json_get_string(obj_servidor, "nombre"));
-        printf("Tipo\t%s\n",   json_get_string(obj_servidor, "tipo"));
-        printf("Host\t%s\n",   json_get_string(obj_servidor, "host"));
-        printf("Puerto\t%d\n", json_get_int   (obj_servidor, "puerto"));
-        printf("Activo:\t%s\n", (json_get_bool(obj_servidor, "activo") ? "Si" : "No"));
-
-        int          j = 0;
-        json_object* obj_bd;
-        json_object* arr_bases;
-        json_object_object_get_ex(obj_servidor, "bases_de_datos", &arr_bases);
-
-        while ((obj_bd = json_object_array_get_idx(arr_bases, j++)))
+        if (json_get_bool(obj_servidor, "activo"))
         {
-            json_object_object_foreach(obj_bd, clave, valor)
+            printf("--------------------------------------------------------------------------------");
+            printf("Nombre\t%s\n", json_get_string(obj_servidor, "nombre"));
+            printf("Tipo\t%s\n",   json_get_string(obj_servidor, "tipo"));
+            printf("Host\t%s\n",   json_get_string(obj_servidor, "host"));
+            printf("Puerto\t%d\n", json_get_int   (obj_servidor, "puerto"));
+
+            int          j = 0;
+            json_object* obj_bd;
+            json_object* arr_bases;
+            json_object_object_get_ex(obj_servidor, "bases_de_datos", &arr_bases);
+
+            while ((obj_bd = json_object_array_get_idx(arr_bases, j++)))
             {
-                printf("\t%s: \"%s\"", clave, json_object_get_string(valor));
+                json_object_object_foreach(obj_bd, clave, valor)
+                {
+                    printf("\t%s: \"%s\"", clave, json_object_get_string(valor));
+                }
+                printf("\n");
             }
-            printf("\n");
         }
     }
     printf("--------------------------------------------------------------------------------");

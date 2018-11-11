@@ -3,8 +3,10 @@ CFLAGS=-Wall -pthread
 DEBUG=-g
 
 INCLUDES=-I /usr/include/json-c -I /usr/include/mysql -I /usr/include/postgresql
+#~ INCLUDES=-I /usr/include/json-c -I /usr/include/mariadb -I /usr/include/postgresql
 LFLAGS=-L /usr/lib
 LIBS=-l json-c -l mysqlclient -l pq
+#~ LIBS=-l json-c -l mariadb -l pq
 
 DEBUG_DIR=debug/
 OBJ_DIR=object/
